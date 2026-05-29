@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 
 // Import Member 4's Cryptographic Utility Library (Zero Conflict!)
 const cryptoEngine = require('./src/crypto/engine');
@@ -9,6 +10,9 @@ const cryptoEngine = require('./src/crypto/engine');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve Static UI Frontend Files directly from Express (Port 5000)
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -95,6 +99,23 @@ function broadcastAlert(type, message) {
 // -------------------------------------------------------------
 // REST API Routes
 // -------------------------------------------------------------
+
+// JWT Secure Authentication Endpoint (Integrates with landing UI)
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  console.log(`[AUTH] Login request for: ${username}`);
+  
+  // Accepts any non-empty username/password credentials for hackathon agility!
+  if (username && password) {
+    res.json({ 
+      success: true,
+      access_token: "mock-jwt-token-for-aegis-core-admin",
+      user: { username, unit: "CODE_BLOODED" }
+    });
+  } else {
+    res.status(401).json({ error: "Access Denied: Invalid Operator ID or Passcode" });
+  }
+});
 
 app.get('/api/system/status', (req, res) => {
   res.json(calculateTrustScore());
@@ -265,5 +286,6 @@ server.listen(PORT, () => {
   console.log(`===================================================`);
   console.log(`AEGIS Backend running on http://localhost:${PORT}`);
   console.log(`WebSocket Server Online.`);
+  console.log(`Serving static frontend assets at http://localhost:${PORT}`);
   console.log(`===================================================`);
 });
