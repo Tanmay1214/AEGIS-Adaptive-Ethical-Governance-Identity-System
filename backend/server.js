@@ -56,7 +56,7 @@ function calculateTrustScore() {
 
   if (score < 50) {
     db.trustScore.surveillance_throttle_level = 'SHUTDOWN'; // Face Recognition Blackout
-  } else if (score < 75) {
+  } else if (score <= 75) {
     db.trustScore.surveillance_throttle_level = 'DEGRADED';  // Throttled surveillance
   } else {
     db.trustScore.surveillance_throttle_level = 'NORMAL';
@@ -260,8 +260,15 @@ app.post('/api/ai/report-suppression', (req, res) => {
 
 app.post('/api/demo/trigger-spike', (req, res) => {
   db.activeConsents.clear();
-  db.biasSuppressions.push({ zone_id: 'Zone B', prediction_alert: 'Forecast B', bias_score: 82, timestamp: new Date().toISOString() });
-  db.biasSuppressions.push({ zone_id: 'Zone D', prediction_alert: 'Forecast D', bias_score: 79, timestamp: new Date().toISOString() });
+  // Simulate a massive demographic bias profiling spike across multiple zones (11 suppressions)
+  for (let i = 0; i < 10; i++) {
+    db.biasSuppressions.push({ 
+      zone_id: `Zone ${String.fromCharCode(65 + (i % 6))}`, 
+      prediction_alert: `Forecast ${String.fromCharCode(65 + (i % 6))}`, 
+      bias_score: 75 + (i % 15), 
+      timestamp: new Date().toISOString() 
+    });
+  }
 
   const scoreData = calculateTrustScore();
   io.emit('trust-score-update', scoreData);
