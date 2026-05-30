@@ -1,16 +1,8 @@
 const crypto = require('crypto');
 
-/**
- * AEGIS Cryptographic Security Helper Engine (Member 4's Workspace)
- */
-
-/**
- * Generates a mock zero-knowledge token proving residency inside a zone
- * without exposing the persistent citizen identity hash.
- */
 function generateZkToken(citizenIdHash, zoneId, durationSeconds = 3600) {
   const expiresAt = new Date(Date.now() + durationSeconds * 1000).toISOString();
-  
+
   // Create a transient nullifier proving proof validity for this specific time block
   const nullifierHash = crypto
     .createHash('sha256')
@@ -31,7 +23,7 @@ function generateZkToken(citizenIdHash, zoneId, durationSeconds = 3600) {
  */
 function splitMessageKey(symmetricKey, requiredSignatures = 3, totalJuryPool = 5) {
   const shares = [];
-  
+
   for (let i = 1; i <= totalJuryPool; i++) {
     // Conceptual representation of SSS shares using cryptographically randomized tokens
     const shareSalt = crypto.randomBytes(8).toString('hex');
@@ -39,7 +31,7 @@ function splitMessageKey(symmetricKey, requiredSignatures = 3, totalJuryPool = 5
       jury_id: `citizen_jury_${i}`,
       public_key: `pub_key_jury_0${i}`,
       // The secret share combines index, symmetric key slice reference, and randomized salt
-      secret_share: `sss_share_part_${i}_[${shareSalt}]_keyRef_${crypto.createHash('sha256').update(symmetricKey).digest('hex').substring(0,8)}`
+      secret_share: `sss_share_part_${i}_[${shareSalt}]_keyRef_${crypto.createHash('sha256').update(symmetricKey).digest('hex').substring(0, 8)}`
     });
   }
 
@@ -52,7 +44,7 @@ function splitMessageKey(symmetricKey, requiredSignatures = 3, totalJuryPool = 5
  */
 function reconstructMessageKey(messageRecord, collectedSharesObj) {
   const uniqueShares = Object.keys(collectedSharesObj).length;
-  
+
   if (uniqueShares < messageRecord.required_signatures) {
     return {
       status: 'LOCKED',

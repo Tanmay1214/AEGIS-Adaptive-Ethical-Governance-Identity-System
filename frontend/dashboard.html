@@ -423,7 +423,7 @@
                                 <th class="p-3 font-medium text-right">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-[#00FBFB]/10 text-white">
+                        <tbody id="fairwatch-forecasts-tbody" class="divide-y divide-[#00FBFB]/10 text-white">
                             <tr class="hover:bg-[#00FBFB]/5">
                                 <td class="p-3">#INF-9821</td>
                                 <td class="p-3 font-bold">ZONE_A_CENTRAL</td>
@@ -482,43 +482,43 @@
                     </div>
                 </div>
                 <div class="flex-grow p-4 bg-black font-mono text-[10px] space-y-4 overflow-y-auto cyber-scrollbar">
-                    <div class="text-[9px] text-[#00FBFB] mb-2">SHAP EXPLAINABILITY VALUES (LAST CYCLE: ZONE_B_GRID)
+                    <div id="shap-cycle-title" class="text-[9px] text-[#00FBFB] mb-2">SHAP EXPLAINABILITY VALUES (LAST CYCLE: ZONE_B_GRID)
                     </div>
                     <div class="space-y-3">
                         <div>
                             <div class="flex justify-between mb-1">
                                 <span>DEMOGRAPHIC PARITY BIAS</span>
-                                <span class="text-red-500 font-bold">+0.40</span>
+                                <span id="shap-demographic-val" class="text-red-500 font-bold">+0.40</span>
                             </div>
                             <div class="w-full bg-[#1C1B1B] h-2">
-                                <div class="bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" style="width: 80%"></div>
+                                <div id="shap-demographic-bar" class="bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" style="width: 80%"></div>
                             </div>
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <span>INCOME DISPARITY VALUE</span>
-                                <span class="text-red-500 font-bold">+0.30</span>
+                                <span id="shap-income-val" class="text-red-500 font-bold">+0.30</span>
                             </div>
                             <div class="w-full bg-[#1C1B1B] h-2">
-                                <div class="bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" style="width: 60%"></div>
+                                <div id="shap-income-bar" class="bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" style="width: 60%"></div>
                             </div>
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <span>HISTORICAL INCIDENT DATA BASELINE</span>
-                                <span class="text-[#00FBFB] font-bold">+0.10</span>
+                                <span id="shap-historical-val" class="text-[#00FBFB] font-bold">+0.10</span>
                             </div>
                             <div class="w-full bg-[#1C1B1B] h-2">
-                                <div class="bg-[#00FBFB] h-2 shadow-[0_0_5px_#00fbfb]" style="width: 20%"></div>
+                                <div id="shap-historical-bar" class="bg-[#00FBFB] h-2 shadow-[0_0_5px_#00fbfb]" style="width: 20%"></div>
                             </div>
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <span>TIME-OF-DAY ACTIVITY WEIGHT</span>
-                                <span class="text-[#00FBFB] font-bold">-0.05</span>
+                                <span id="shap-time-val" class="text-[#00FBFB] font-bold">-0.05</span>
                             </div>
                             <div class="w-full bg-[#1C1B1B] h-2 flex justify-end">
-                                <div class="bg-green-500 h-2 shadow-[0_0_5px_#22c55e]" style="width: 10%"></div>
+                                <div id="shap-time-bar" class="bg-green-500 h-2 shadow-[0_0_5px_#22c55e]" style="width: 10%"></div>
                             </div>
                         </div>
                     </div>
@@ -537,7 +537,7 @@
                             &gt;SUPPRESSED_ALERTS_LOG</h3>
                     </div>
                 </div>
-                <div class="flex-grow p-4 bg-black font-mono text-[9px] overflow-y-auto cyber-scrollbar space-y-2">
+                <div id="fairwatch-suppressed-logs" class="flex-grow p-4 bg-black font-mono text-[9px] overflow-y-auto cyber-scrollbar space-y-2">
                     <div class="text-yellow-500 animate-pulse font-bold">[19:42:01] CRITICAL SUPPRESSION: Zone B crime
                         forecast blocked. Demographic bias surpassed 65% threshold.</div>
                     <div class="text-[#00FBFB] opacity-80">[19:35:14] AUDIT: Clean run in Zone A. No suppressions

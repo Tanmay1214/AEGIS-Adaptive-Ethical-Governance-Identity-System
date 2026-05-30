@@ -1,9 +1,3 @@
-/**
- * AEGIS Core Backend Integration Tester (Member 3's Testing Suite)
- * Instructions:
- *   1. Start the backend server: node server.js
- *   2. In a separate terminal, run this test: node test-backend.js
- */
 
 const http = require('http');
 
@@ -152,7 +146,7 @@ async function runTests() {
     const sign3 = await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_3', secret_share: 'share_03' });
     console.log(`   Consensus status: ${sign3.data.status}`);
     console.log(`   Decrypted emergency data: "${sign3.data.decrypted_content}"`);
-    
+
     if (sign3.statusCode === 200 && sign3.data.status === 'UNLOCKED' && sign3.data.decrypted_content) {
       console.log("✅ Test 5 Passed\n");
     } else {

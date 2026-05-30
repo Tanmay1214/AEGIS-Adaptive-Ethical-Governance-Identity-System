@@ -1,9 +1,3 @@
-// =============================================================
-// AEGIS Dashboard Core Logic (Vanilla JS Full-Stack Bindings)
-// LNMIIT Jaipur // UNIT: Code Blooded
-// =============================================================
-
-// ── 1. Tailwind UI Configuration (Styles & Tokens) ────
 if (typeof tailwind !== 'undefined') {
     tailwind.config = {
         darkMode: "class",
@@ -74,7 +68,7 @@ const SOCKET_URL = window.location.origin; // Socket.io served locally from Port
 
 function initDashboard() {
     console.log("[AEGIS] Initializing WebSockets & Visual overlays...");
-    
+
     // Connect websocket client
     const socket = io(SOCKET_URL);
 
@@ -88,10 +82,10 @@ function initDashboard() {
             });
             // Apply active styles to clicked tab
             tab.className = "bg-[#00FBFB] text-[#050505] shadow-[0_0_10px_#00FBFB] py-3 flex flex-col items-center justify-center active:scale-95 transition-transform w-full flex-shrink-0";
-            
+
             const selectedTabId = tab.getAttribute('data-tab');
             console.log(`Switched view to tab: ${selectedTabId}`);
-            
+
             // Toggle corresponding sections if they exist
             const contentPanels = document.querySelectorAll('.tab-content');
             contentPanels.forEach(panel => {
@@ -117,32 +111,29 @@ function initDashboard() {
     // ── 3. WebSocket Event Listeners ─────────────────────────────────
     socket.on('trust-score-update', (data) => {
         console.log("[SOCKET_DATA] Score update received: ", data);
-        
+
         const score = data.composite_score;
         const throttle = data.surveillance_throttle_level;
 
         // 1. Update circular dial values & colors
         if (dialScore) {
             dialScore.innerText = `${score}%`;
-            dialScore.className = `text-6xl font-black tracking-tighter transition-all duration-300 ${
-                score >= 80 ? 'text-[#00fbfb] drop-shadow-[0_0_10px_#00fbfb]' : 
-                score >= 50 ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 
-                'text-red-500 animate-pulse drop-shadow-[0_0_12px_#ff0000]'
-            }`;
+            dialScore.className = `text-6xl font-black tracking-tighter transition-all duration-300 ${score >= 80 ? 'text-[#00fbfb] drop-shadow-[0_0_10px_#00fbfb]' :
+                score >= 50 ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' :
+                    'text-red-500 animate-pulse drop-shadow-[0_0_12px_#ff0000]'
+                }`;
         }
 
         // 2. Update status label descriptions
         if (dialStatus) {
-            dialStatus.innerText = `STATUS: ${
-                throttle === 'NORMAL' ? 'NOMINAL' : 
-                throttle === 'DEGRADED' ? 'THROTTLED_SCAN' : 
-                'CRITICAL_BLACKOUT'
-            }`;
-            dialStatus.className = `text-[9px] mt-2 tracking-widest font-bold transition-colors ${
-                throttle === 'NORMAL' ? 'text-green-400' : 
-                throttle === 'DEGRADED' ? 'text-yellow-500 animate-pulse' : 
-                'text-red-500 animate-bounce'
-            }`;
+            dialStatus.innerText = `STATUS: ${throttle === 'NORMAL' ? 'NOMINAL' :
+                throttle === 'DEGRADED' ? 'THROTTLED_SCAN' :
+                    'CRITICAL_BLACKOUT'
+                }`;
+            dialStatus.className = `text-[9px] mt-2 tracking-widest font-bold transition-colors ${throttle === 'NORMAL' ? 'text-green-400' :
+                throttle === 'DEGRADED' ? 'text-yellow-500 animate-pulse' :
+                    'text-red-500 animate-bounce'
+                }`;
         }
 
         // 3. Apply active visual blurs to ConsentCam Mock Feed & Modal Canvas Feed
@@ -196,7 +187,7 @@ function initDashboard() {
         zonesList.forEach(z => {
             const statusEl = document.getElementById(`zone-${z}-status`);
             const consentEl = document.getElementById(`zone-${z}-consent`);
-            
+
             if (statusEl) {
                 statusEl.innerText = throttle === 'SHUTDOWN' ? 'BLACKOUT' : throttle === 'DEGRADED' ? 'THROTTLED' : 'NOMINAL';
                 statusEl.className = `p-3 font-bold ${throttle === 'SHUTDOWN' ? 'text-red-500 animate-pulse' : throttle === 'DEGRADED' ? 'text-yellow-500 animate-pulse' : 'text-green-400'}`;
@@ -224,14 +215,14 @@ function initDashboard() {
 
     socket.on('alert-log', (log) => {
         console.log("[SOCKET_LOG] Telemetry warning received: ", log);
-        
+
         if (consoleLogs) {
             // Remove flashing cursor temporarily
             const cursor = consoleLogs.querySelector('.cursor-active');
             if (cursor) cursor.remove();
 
             const logLine = document.createElement('div');
-            
+
             // Map text coloring depending on alert priority/types
             if (log.type === 'bias_suppression_alert' || log.type === 'critical_system_alert') {
                 logLine.className = "text-yellow-400 mb-1 font-bold animate-pulse";
@@ -245,7 +236,7 @@ function initDashboard() {
 
             const timestamp = new Date(log.timestamp).toLocaleTimeString();
             logLine.innerText = `[${timestamp}] ${log.message}`;
-            
+
             consoleLogs.appendChild(logLine);
 
             // Append cursor back at bottom
@@ -259,6 +250,19 @@ function initDashboard() {
             consoleLogs.scrollTop = consoleLogs.scrollHeight;
         }
     });
+
+    socket.on('new-prediction', (prediction) => {
+        console.log("[SOCKET_DATA] New prediction audit received: ", prediction);
+        loadFairWatchData();
+    });
+
+    socket.on('predictions-reset', (defaultPreds) => {
+        console.log("[SOCKET_DATA] Predictions reset received.");
+        renderPredictions(defaultPreds);
+    });
+
+    // Fetch initial FairWatch predictions
+    loadFairWatchData();
 
     // ── 4. Geographic Map Visualizer (Leaflet.js) ────────────────
     let mapEl = document.getElementById('map');
@@ -295,11 +299,11 @@ function initDashboard() {
                     const mouseLat = document.getElementById('mouseLat');
                     const mouseLon = document.getElementById('mouseLon');
                     const mouseSector = document.getElementById('mouseSector');
-                    
-                    if(mouseLat) mouseLat.innerText = e.latlng.lat.toFixed(4);
-                    if(mouseLon) mouseLon.innerText = e.latlng.lng.toFixed(4);
-                    
-                    if(mouseSector) {
+
+                    if (mouseLat) mouseLat.innerText = e.latlng.lat.toFixed(4);
+                    if (mouseLon) mouseLon.innerText = e.latlng.lng.toFixed(4);
+
+                    if (mouseSector) {
                         const secX = Math.floor((e.latlng.lng - 75.6) / 0.05);
                         const secY = Math.floor((e.latlng.lat - 26.7) / 0.05);
                         const sectorChar = String.fromCharCode(65 + (Math.abs(secX + secY) % 26));
@@ -349,7 +353,7 @@ function initDashboard() {
                 </div>
             </div>
         `;
-        
+
         // Feed static coordinates to mouse tracking display
         const mouseLat = document.getElementById('mouseLat');
         const mouseLon = document.getElementById('mouseLon');
@@ -362,7 +366,7 @@ function initDashboard() {
     // ── Live Webcam Capture Pipeline ──────────────────────────────────
     const webcamEl = document.getElementById('camera-feed-webcam');
     const mockImgEl = document.getElementById('camera-feed-mock');
-    
+
     if (webcamEl && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         console.log("[AEGIS] Requesting user webcam permission...");
         navigator.mediaDevices.getUserMedia({ video: { width: 500, height: 375 } })
@@ -507,7 +511,7 @@ window.startCitizenDecryptionSimulation = async () => {
                         payloadBox.innerText = `DECRYPTED PAYLOAD:
 [RECORD ID: ${messageId}]
 STATUS: ${signData.status}
-JURY VERIFICATION BLOCK: #99A1-${Math.floor(100+Math.random()*900)}
+JURY VERIFICATION BLOCK: #99A1-${Math.floor(100 + Math.random() * 900)}
 ${signData.decrypted_content}`;
                     }
                     logEl.innerHTML += `<div class="text-green-400 font-bold mt-1">[SYS] DECRYPTION SUCCESSFUL. Key reconstructed conceptually!</div>`;
@@ -550,7 +554,7 @@ window.togglePhantomPassConsent = () => {
         isConsentGranted = false;
         consentBtn.innerText = "CONSENT: REVOKED";
         consentBtn.className = "px-1.5 py-0.5 border border-red-500 text-red-500 text-[8px] font-bold hover:bg-red-500/10 active:scale-95 transition-all animate-pulse";
-        
+
         if (logEl) {
             logEl.innerHTML += `<div class="text-yellow-500 font-bold mt-1">[PHANTOMPASS] Geotracking opt-out received for Token #TKN-9921 in Zone B.</div>`;
             logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Grace period initiated: walkout buffer countdown started.</div>`;
@@ -561,7 +565,7 @@ window.togglePhantomPassConsent = () => {
         if (bufferOverlay && overlayTimer) {
             bufferOverlay.classList.remove('hidden');
             bufferOverlay.classList.add('flex');
-            
+
             let timeLeft = 3.0;
             overlayTimer.innerText = `${timeLeft.toFixed(1)} SECS`;
 
@@ -572,7 +576,7 @@ window.togglePhantomPassConsent = () => {
                     clearInterval(bufferInterval);
                     bufferOverlay.classList.add('hidden');
                     bufferOverlay.classList.remove('flex');
-                    
+
                     // Apply heavy blur
                     targetFeed.style.filter = "blur(25px) grayscale(80%)";
                     if (shieldOverlay) {
@@ -593,7 +597,7 @@ window.togglePhantomPassConsent = () => {
         isConsentGranted = true;
         consentBtn.innerText = "CONSENT: GRANTED";
         consentBtn.className = "px-1.5 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[8px] font-bold hover:bg-[#00FBFB]/10 active:scale-95 transition-all";
-        
+
         if (bufferInterval) clearInterval(bufferInterval);
         if (bufferOverlay) {
             bufferOverlay.classList.add('hidden');
@@ -606,7 +610,7 @@ window.togglePhantomPassConsent = () => {
 
         // Lift blur
         targetFeed.style.filter = "none";
-        
+
         if (logEl) {
             logEl.innerHTML += `<div class="text-green-400 font-bold mt-1">[PHANTOMPASS] Zero-Knowledge Ward residency verified for Token #TKN-9921.</div>`;
             logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Opt-out revoked. Re-authenticating camera stream access.</div>`;
@@ -634,7 +638,7 @@ window.restoreAllConsents = () => {
     }
 };
 
-// ── Live Simulated Telemetry Stream Generator (Disabled to prevent log clutter) ──
+// ── Live Simulated Telemetry Stream Generator ──
 /*
 (() => {
     const templates = [
@@ -686,3 +690,139 @@ window.restoreAllConsents = () => {
     }, 4500); // Trigger every 4.5 seconds
 })();
 */
+
+// ── 5. FairWatch AI Dynamic Real-time Integration ────────────────
+async function loadFairWatchData() {
+    const tbody = document.getElementById('fairwatch-forecasts-tbody');
+    if (!tbody) return;
+
+    try {
+        const response = await fetch(`${DASH_API_URL}/ai/predictions`);
+        const data = await response.json();
+        
+        if (data && data.predictions) {
+            renderPredictions(data.predictions);
+        }
+    } catch (err) {
+        console.error("Failed to load FairWatch predictions:", err);
+    }
+}
+
+function renderPredictions(predictions) {
+    const tbody = document.getElementById('fairwatch-forecasts-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    // Sort: newest first
+    const sorted = [...predictions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    sorted.forEach(pred => {
+        const row = document.createElement('tr');
+        row.className = "hover:bg-[#00FBFB]/5 transition-colors border-b border-[#00FBFB]/10";
+        row.id = `pred-row-${pred.inference_id}`;
+        
+        const isSuppressed = pred.status === 'SUPPRESSED';
+        const badgeClass = isSuppressed 
+            ? "px-2 py-0.5 border border-red-500 text-red-500 text-[9px] font-bold animate-pulse"
+            : "px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold";
+        
+        const fairnessClass = isSuppressed ? "text-red-500 font-bold animate-pulse" : "text-green-400 font-bold";
+
+        row.innerHTML = `
+            <td class="p-3">#${pred.inference_id}</td>
+            <td class="p-3 font-bold">${pred.zone_id}</td>
+            <td class="p-3">${pred.confidence}</td>
+            <td class="p-3 ${fairnessClass}">${pred.fairness_score}/100</td>
+            <td class="p-3 text-right">
+                <span class="${badgeClass}">${pred.status}</span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    if (sorted.length > 0) {
+        updateSHAPPanel(sorted[0]);
+        updateSuppressedLogs(sorted);
+    }
+}
+
+function updateSHAPPanel(latestPred) {
+    const titleEl = document.getElementById('shap-cycle-title');
+    const demoVal = document.getElementById('shap-demographic-val');
+    const demoBar = document.getElementById('shap-demographic-bar');
+    const incomeVal = document.getElementById('shap-income-val');
+    const incomeBar = document.getElementById('shap-income-bar');
+    const historicalVal = document.getElementById('shap-historical-val');
+    const historicalBar = document.getElementById('shap-historical-bar');
+    const timeVal = document.getElementById('shap-time-val');
+    const timeBar = document.getElementById('shap-time-bar');
+
+    if (titleEl) {
+        titleEl.innerText = `SHAP EXPLAINABILITY VALUES (LAST CYCLE: ${latestPred.zone_id})`;
+    }
+
+    const metrics = latestPred.bias_metrics || { income_disparity: 0.15, demographic_parity_diff: 0.10 };
+    const demographicScore = metrics.demographic_parity_diff;
+    const incomeScore = metrics.income_disparity;
+
+    if (demoVal) {
+        demoVal.innerText = `+${demographicScore.toFixed(2)}`;
+        demoVal.className = demographicScore >= 0.35 ? "text-red-500 font-bold animate-pulse" : "text-green-400 font-bold";
+    }
+    if (demoBar) {
+        demoBar.style.width = `${Math.min(100, demographicScore * 100)}%`;
+        demoBar.className = demographicScore >= 0.35 ? "bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" : "bg-green-500 h-2 shadow-[0_0_5px_#22c55e]";
+    }
+
+    if (incomeVal) {
+        incomeVal.innerText = `+${incomeScore.toFixed(2)}`;
+        incomeVal.className = incomeScore >= 0.35 ? "text-red-500 font-bold animate-pulse" : "text-green-400 font-bold";
+    }
+    if (incomeBar) {
+        incomeBar.style.width = `${Math.min(100, incomeScore * 100)}%`;
+        incomeBar.className = incomeScore >= 0.35 ? "bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" : "bg-green-500 h-2 shadow-[0_0_5px_#22c55e]";
+    }
+
+    const histVal = 0.10 + (latestPred.inference_id ? parseInt(latestPred.inference_id.split('-')[1] || 0) % 5 / 100 : 0);
+    if (historicalVal) {
+        historicalVal.innerText = `+${histVal.toFixed(2)}`;
+    }
+    if (historicalBar) {
+        historicalBar.style.width = `${histVal * 100}%`;
+    }
+
+    const tVal = -0.05 + (latestPred.inference_id ? parseInt(latestPred.inference_id.split('-')[1] || 0) % 7 / 100 : 0);
+    if (timeVal) {
+        timeVal.innerText = `${tVal >= 0 ? '+' : ''}${tVal.toFixed(2)}`;
+        timeVal.className = tVal >= 0 ? "text-red-400 font-bold" : "text-green-400 font-bold";
+    }
+    if (timeBar) {
+        timeBar.style.width = `${Math.abs(tVal) * 100}%`;
+        timeBar.className = tVal >= 0 ? "bg-red-400 h-2 shadow-[0_0_5px_#f87171]" : "bg-green-500 h-2 shadow-[0_0_5px_#22c55e]";
+    }
+}
+
+function updateSuppressedLogs(predictions) {
+    const logsEl = document.getElementById('fairwatch-suppressed-logs');
+    if (!logsEl) return;
+
+    logsEl.innerHTML = '';
+    const sorted = [...predictions].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    sorted.forEach(pred => {
+        const timeStr = new Date(pred.timestamp).toLocaleTimeString();
+        const logLine = document.createElement('div');
+        
+        if (pred.status === 'SUPPRESSED') {
+            logLine.className = "text-yellow-500 animate-pulse font-bold";
+            logLine.innerText = `[${timeStr}] CRITICAL SUPPRESSION: ${pred.zone_id} crime forecast suppressed. demographic parity disparity (+${(pred.bias_metrics?.demographic_parity_diff || 0).toFixed(2)}) surpassed threshold.`;
+        } else {
+            logLine.className = "text-[#00FBFB] opacity-80";
+            logLine.innerText = `[${timeStr}] AUDIT: Clean run in ${pred.zone_id}. No suppressions triggered. (Fairness score: ${pred.fairness_score}/100)`;
+        }
+        logsEl.appendChild(logLine);
+    });
+
+    logsEl.scrollTop = logsEl.scrollHeight;
+}

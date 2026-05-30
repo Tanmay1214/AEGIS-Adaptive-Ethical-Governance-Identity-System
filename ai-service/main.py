@@ -63,6 +63,24 @@ def report_suppression_to_backend(zone_id: str, alert: str, bias_score: int):
     except Exception as e:
         print(f"[AI Service Warning] Failed to report bias suppression to backend: {e}")
 
+def report_prediction_to_backend(inference_id: str, zone_id: str, confidence: float, fairness_score: int, status: str, alert: str, bias_metrics: dict, income_level: str, predominant_race: str):
+    try:
+        url = f"{BACKEND_URL}/api/ai/report-prediction"
+        payload = {
+            "inference_id": inference_id,
+            "zone_id": zone_id,
+            "confidence": confidence,
+            "fairness_score": fairness_score,
+            "status": status,
+            "prediction_alert": alert,
+            "bias_metrics": bias_metrics,
+            "income_level": income_level,
+            "predominant_race": predominant_race
+        }
+        requests.post(url, json=payload, timeout=2)
+    except Exception as e:
+        print(f"[AI Service Warning] Failed to report prediction audit to backend: {e}")
+
 # -------------------------------------------------------------
 # REST API Endpoints
 # -------------------------------------------------------------
@@ -129,13 +147,33 @@ def predict_and_audit(request: PredictRequest, background_tasks: BackgroundTasks
         
         if suppression_triggered:
             alert = f"[SUPPRESSED BY AUDIT] {alert}"
-            # Notify backend server asynchronously so dashboard updates real-time
-            background_tasks.add_task(
-                report_suppression_to_backend, 
-                "Zone B" if request.latitude == 13.7563 else "Zone D", 
-                alert, 
-                100 - fairness_score
-            )
+
+        # Determine target zone name for display
+        zone_id = "ZONE_B_GRID"
+        if request.latitude == 13.7012:
+            zone_id = "ZONE_A_CENTRAL"
+        elif request.latitude == 13.7563:
+            zone_id = "ZONE_B_GRID"
+
+        # Notify backend server asynchronously of every forecast run so dashboard updates in real-time
+        inference_id = f"INF-{random.randint(9000, 9999)}"
+        status = "SUPPRESSED" if suppression_triggered else "PASSED"
+        
+        background_tasks.add_task(
+            report_prediction_to_backend,
+            inference_id,
+            zone_id,
+            confidence,
+            fairness_score,
+            status,
+            alert,
+            {
+                "income_disparity": round(income_disparity, 2),
+                "demographic_parity_diff": round(demographic_parity, 2)
+            },
+            income,
+            race
+        )
             
         return {
             "prediction_alert": alert,

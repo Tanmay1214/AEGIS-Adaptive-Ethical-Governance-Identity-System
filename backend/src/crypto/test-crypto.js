@@ -1,7 +1,3 @@
-/**
- * AEGIS Cryptographic Engine validation suite (Member 4's testing suite)
- * Execute this file with: node test-crypto.js
- */
 
 const cryptoEngine = require('./engine');
 const assert = require('assert');
@@ -37,7 +33,7 @@ runTest("PhantomPass ZK-Proof Validity & Expire Checks", () => {
 
   // 1. Issue credential
   const credential = cryptoEngine.generateZkToken(citizenIdHash, zoneId, durationSeconds);
-  
+
   assert.ok(credential.proof_credential, "Proof token should be generated");
   assert.ok(credential.nullifier_hash, "Nullifier hash should be generated");
   assert.ok(credential.expires_at, "Expiration timestamp must exist");

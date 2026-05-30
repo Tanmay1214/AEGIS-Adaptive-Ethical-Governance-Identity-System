@@ -285,8 +285,7 @@
         <div class="col-span-1 lg:col-span-5 flex flex-col gap-6">
 
             <!-- PhantomPass ZK-Token Request Card -->
-            <section
-                class="relative cyber-border bg-slate-950/40 p-6 flex flex-col overflow-hidden">
+            <section class="relative cyber-border bg-slate-950/40 p-6 flex flex-col overflow-hidden">
                 <div>
                     <div class="corner-bracket-tl"></div>
                     <div class="corner-bracket-br"></div>
@@ -345,7 +344,7 @@
                     <!-- Output Proof Credentials -->
                     <div id="pp-credential-box"
                         class="hidden p-3 bg-black/85 border border-[#00fbfb]/30 font-mono text-[9px] text-[#00FBFB] space-y-1">
-                        <!-- Filled by JS -->
+
                     </div>
                 </div>
             </section>
@@ -362,7 +361,8 @@
                 </h2>
 
                 <p class="text-xs text-slate-400 mb-4 font-mono leading-relaxed">
-                    Request an AI-generated crime probability forecast near coordinates. Requests featuring low-income or minority profiles trigger a live bias audit.
+                    Request an AI-generated crime probability forecast near coordinates. Requests featuring low-income
+                    or minority profiles trigger a live bias audit.
                 </p>
 
                 <div class="space-y-3">
@@ -376,7 +376,8 @@
                             </select>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">CRIME CATEGORY</label>
+                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">CRIME
+                                CATEGORY</label>
                             <select id="fw-category"
                                 class="w-full bg-zinc-900 border border-[#00FBFB]/30 text-white font-mono text-[10px] p-1.5 focus:border-[#00FBFB] outline-none">
                                 <option value="theft">Theft / Larceny</option>
@@ -387,7 +388,8 @@
 
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">DEMOGRAPHIC INCOME</label>
+                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">DEMOGRAPHIC
+                                INCOME</label>
                             <select id="fw-income"
                                 class="w-full bg-zinc-900 border border-[#00FBFB]/30 text-white font-mono text-[10px] p-1.5 focus:border-[#00FBFB] outline-none">
                                 <option value="high">High Income (Unbiased)</option>
@@ -395,7 +397,8 @@
                             </select>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">DEMOGRAPHIC RACE</label>
+                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">DEMOGRAPHIC
+                                RACE</label>
                             <select id="fw-race"
                                 class="w-full bg-zinc-900 border border-[#00FBFB]/30 text-white font-mono text-[10px] p-1.5 focus:border-[#00FBFB] outline-none">
                                 <option value="majority">Majority (Unbiased)</option>
@@ -423,7 +426,7 @@
 
     <!-- Footer -->
     <footer class="w-full max-w-5xl text-center border-t border-white/5 pt-4 mt-6 text-[9px] font-mono text-outline">
-        AEGIS Dynamic Governance Consent Engine v2.5 // Designed by Member 1 for Hackathon Integrated Demo.
+        AEGIS_OS V1.0 Citizen Portal
     </footer>
 
     <!-- Interactive Backend Glue Logic -->
@@ -582,7 +585,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 const isSuppressed = data.bias_metrics.suppression_triggered;
 
                 forecastBox.className = isSuppressed

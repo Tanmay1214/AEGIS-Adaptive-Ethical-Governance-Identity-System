@@ -23,11 +23,55 @@ const io = new Server(server, {
 });
 
 // In-Memory "Database"
+const defaultPredictions = [
+  {
+    inference_id: "INF-9821",
+    zone_id: "ZONE_A_CENTRAL",
+    confidence: "89.4%",
+    fairness_score: 85,
+    status: "PASSED",
+    prediction_alert: "Predicted elevated assault alert near grid coordinates.",
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+    bias_metrics: { income_disparity: 0.15, demographic_parity_diff: 0.10 }
+  },
+  {
+    inference_id: "INF-9822",
+    zone_id: "ZONE_B_GRID",
+    confidence: "74.2%",
+    fairness_score: 48,
+    status: "SUPPRESSED",
+    prediction_alert: "Predicted elevated theft alert near grid coordinates.",
+    timestamp: new Date(Date.now() - 3600000 * 1.5).toISOString(),
+    bias_metrics: { income_disparity: 0.45, demographic_parity_diff: 0.50 }
+  },
+  {
+    inference_id: "INF-9823",
+    zone_id: "ZONE_C_METRO",
+    confidence: "91.7%",
+    fairness_score: 92,
+    status: "PASSED",
+    prediction_alert: "Predicted elevated property alert near grid coordinates.",
+    timestamp: new Date(Date.now() - 3600000 * 1.0).toISOString(),
+    bias_metrics: { income_disparity: 0.10, demographic_parity_diff: 0.05 }
+  },
+  {
+    inference_id: "INF-9824",
+    zone_id: "ZONE_D_OUTPOST",
+    confidence: "63.1%",
+    fairness_score: 56,
+    status: "SUPPRESSED",
+    prediction_alert: "Predicted elevated property alert near grid coordinates.",
+    timestamp: new Date(Date.now() - 3600000 * 0.5).toISOString(),
+    bias_metrics: { income_disparity: 0.35, demographic_parity_diff: 0.45 }
+  }
+];
+
 const db = {
   activeConsents: new Set(['citizen_token_1', 'citizen_token_2']),
   phantomCredentials: [],
   civicVaultMessages: {},
   biasSuppressions: [],
+  predictions: [...defaultPredictions],
   trustScore: {
     composite_score: 95,
     metrics: {
@@ -261,22 +305,101 @@ app.post('/api/ai/report-suppression', (req, res) => {
     timestamp: new Date().toISOString()
   });
 
+  // Also record in db.predictions for the dynamic UI
+  const prediction = {
+    inference_id: `INF-${Math.floor(9000 + Math.random() * 999)}`,
+    zone_id: zone_id || 'ZONE_B_GRID',
+    confidence: "74.2%", // Pinned representative mock confidence for this raw suppression call
+    fairness_score: 100 - (bias_score || 58),
+    status: 'SUPPRESSED',
+    prediction_alert: prediction_alert || 'Demographic bias profiling suppressed',
+    bias_metrics: {
+      income_disparity: (bias_score || 58) / 200,
+      demographic_parity_diff: (bias_score || 58) / 200
+    },
+    timestamp: new Date().toISOString()
+  };
+  db.predictions.push(prediction);
+  io.emit('new-prediction', prediction);
+
   broadcastAlert('bias_suppression_alert', `FairWatch suppressed prediction in ${zone_id || 'Zone B'} due to High Bias Score (${bias_score || 58})`);
   calculateTrustScore();
 
   res.json({ success: true, trust_score: db.trustScore });
 });
 
+app.get('/api/ai/predictions', (req, res) => {
+  res.json({
+    predictions: db.predictions,
+    suppressions: db.biasSuppressions
+  });
+});
+
+app.post('/api/ai/report-prediction', (req, res) => {
+  const { inference_id, zone_id, confidence, fairness_score, status, prediction_alert, bias_metrics, income_level, predominant_race } = req.body;
+  
+  const prediction = {
+    inference_id: inference_id || `INF-${Math.floor(9000 + Math.random() * 999)}`,
+    zone_id: zone_id || 'ZONE_B_GRID',
+    confidence: typeof confidence === 'number' ? `${(confidence * 100).toFixed(1)}%` : (confidence || "80.0%"),
+    fairness_score: fairness_score || 100,
+    status: status || 'PASSED',
+    prediction_alert: prediction_alert || 'Inference run completed',
+    bias_metrics: bias_metrics || { income_disparity: 0.1, demographic_parity_diff: 0.1 },
+    income_level,
+    predominant_race,
+    timestamp: new Date().toISOString()
+  };
+
+  db.predictions.push(prediction);
+
+  // If suppressed, also add to biasSuppressions and broadcast alert
+  if (prediction.status === 'SUPPRESSED') {
+    db.biasSuppressions.push({
+      zone_id: prediction.zone_id,
+      prediction_alert: prediction.prediction_alert,
+      bias_score: 100 - prediction.fairness_score,
+      timestamp: prediction.timestamp
+    });
+    broadcastAlert('bias_suppression_alert', `FairWatch suppressed prediction in ${prediction.zone_id} due to High Bias Score (${100 - prediction.fairness_score})`);
+  } else {
+    broadcastAlert('bias_audit_passed', `FairWatch audit passed for prediction in ${prediction.zone_id}. Fairness: ${prediction.fairness_score}/100.`);
+  }
+
+  const scoreData = calculateTrustScore();
+  io.emit('trust-score-update', scoreData);
+  io.emit('new-prediction', prediction);
+
+  res.json({ success: true, prediction, trust_score: db.trustScore });
+});
+
 app.post('/api/demo/trigger-spike', (req, res) => {
   db.activeConsents.clear();
   // Simulate a massive demographic bias profiling spike across multiple zones (11 suppressions)
   for (let i = 0; i < 10; i++) {
+    const zone = `Zone ${String.fromCharCode(65 + (i % 6))}`;
+    const biasScore = 75 + (i % 15);
+    const timestamp = new Date().toISOString();
+
     db.biasSuppressions.push({ 
-      zone_id: `Zone ${String.fromCharCode(65 + (i % 6))}`, 
+      zone_id: zone, 
       prediction_alert: `Forecast ${String.fromCharCode(65 + (i % 6))}`, 
-      bias_score: 75 + (i % 15), 
-      timestamp: new Date().toISOString() 
+      bias_score: biasScore, 
+      timestamp: timestamp 
     });
+
+    const prediction = {
+      inference_id: `INF-${9900 + i}`,
+      zone_id: zone,
+      confidence: `${(60 + (i * 3))}%`,
+      fairness_score: 100 - biasScore,
+      status: 'SUPPRESSED',
+      prediction_alert: `Forecast ${String.fromCharCode(65 + (i % 6))}`,
+      bias_metrics: { income_disparity: biasScore / 200, demographic_parity_diff: biasScore / 200 },
+      timestamp: timestamp
+    };
+    db.predictions.push(prediction);
+    io.emit('new-prediction', prediction);
   }
 
   const scoreData = calculateTrustScore();
@@ -289,10 +412,12 @@ app.post('/api/demo/trigger-spike', (req, res) => {
 app.post('/api/demo/reset', (req, res) => {
   db.activeConsents = new Set(['citizen_token_1', 'citizen_token_2']);
   db.biasSuppressions = [];
+  db.predictions = [...defaultPredictions];
   db.civicVaultMessages = {};
   db.phantomCredentials = [];
   const scoreData = calculateTrustScore();
   io.emit('trust-score-update', scoreData);
+  io.emit('predictions-reset', defaultPredictions);
   broadcastAlert('system_reset', 'System state reset to base operations.');
   res.json({ message: 'System state reset', current_state: scoreData });
 });
