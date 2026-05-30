@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>AEGIS_MISSION_CONTROL</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Map Rendering System (Served Locally) -->
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
+    <!-- ConsentCam GPU backend via WebSocket — no browser-side ML needed -->
+    <!-- WebSockets Client Served Automatically by Express Server -->
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body class="text-on-background selection:bg-primary-container selection:text-on-primary-container">
+    <div class="crt-overlay"></div>
+
+    <!-- Header Panel -->
+    <header
+        class="bg-[#050505] text-white font-mono uppercase tracking-tighter text-sm border-b-2 border-[#00fbfb] shadow-[0_0_15px_rgba(0,251,251,0.3)] flex justify-between items-center w-full px-6 py-2 z-50 fixed top-0 left-0">
+        <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined text-[#00fbfb]" data-icon="terminal">terminal</span>
+            <div class="flex items-center gap-3 relative">
+                <h1 id="headerThreats" class="text-lg font-black text-white uppercase tracking-widest animate-pulse">
+                    &gt;AEGIS_OS v1.0</h1>
+                <span class="material-symbols-outlined text-[#00fbfb] text-base animate-pulse"
+                    data-icon="fingerprint">fingerprint</span>
+            </div>
+        </div>
+
+        <div class="hidden md:flex gap-8 items-center font-mono">
+            <div class="flex gap-2 items-center text-[#00fbfb]">
+                <span class="w-2 h-2 bg-[#00fbfb] block animate-pulse"></span>
+                <span class="text-[10px]">STATUS: OK</span>
+            </div>
+            <div class="flex gap-2 items-center text-[#00fbfb] opacity-80">
+                <span class="w-2 h-2 bg-[#00fbfb] block animate-pulse"></span>
+                <span class="text-[10px]">NETWORK: CONNECTED</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar Navigation (RESTORED EXACTLY AS ORIGINAL) -->
+    <aside
+        class="fixed left-0 top-16 h-[calc(100vh-64px)] w-20 flex flex-col justify-between py-4 z-40 bg-[#0E0E0E] border-r border-[#00FBFB]/30 shadow-[10px_0_15px_-10px_rgba(0,251,251,0.2)] font-mono text-xs uppercase">
+        <div class="flex flex-col gap-2">
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-10 h-10 border border-[#00FBFB] p-0.5 mb-1">
+                    <img class="w-full h-full object-cover grayscale brightness-150"
+                        data-alt="Digital glitch portrait of a futuristic system administrator in a dark techwear outfit"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCt7E37Fhv-tj7hTP_57X2kiE8jd4W9rLfILrfSINHOE4yvKh6oZg0XlGLIt7QBgW3Y4Sj9guGbUadVhh8DKBHFDqWlqD0HGUlofi-oknc6lgfKXYMdNq_D6P1VFsLFMBq5jwq69QwxRnEMQTcvRSK26obBsTuLBtdJ21GuSEwH-vUR5aM6jkV3nkySrehTwGUD0QBEorYthvXR8gyKHIEQCh5MLbvjMRwt3reRovDY80aB6vEJcXqIRA58quaFxFiZkGmcHjI6silQ" />
+                </div>
+                <span class="text-[10px] text-[#00FBFB]">OP_01</span>
+            </div>
+            <button data-tab="overview"
+                class="bg-[#00FBFB] text-[#050505] shadow-[0_0_10px_#00FBFB] py-3 flex flex-col items-center justify-center active:scale-95 transition-transform w-full flex-shrink-0">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-[8px] tracking-tighter text-center leading-none mt-1">Control Core</span>
+            </button>
+            <button data-tab="fairwatch"
+                class="text-[#007070] hover:bg-[#00FBFB]/10 hover:text-[#00FBFB] py-3 flex flex-col items-center justify-center active:scale-95 transition-transform w-full flex-shrink-0">
+                <span class="material-symbols-outlined">troubleshoot</span>
+                <span class="text-[8px] tracking-tighter text-center leading-none mt-1">FairWatch AI</span>
+            </button>
+            <button data-tab="civicvault"
+                class="text-[#007070] hover:bg-[#00FBFB]/10 hover:text-[#00FBFB] py-3 flex flex-col items-center justify-center active:scale-95 transition-transform w-full flex-shrink-0">
+                <span class="material-symbols-outlined">gavel</span>
+                <span class="text-[8px] tracking-tighter text-center leading-none mt-1">CivicVault</span>
+            </button>
+            <button data-tab="phantompass"
+                class="text-[#007070] hover:bg-[#00FBFB]/10 hover:text-[#00FBFB] py-3 flex flex-col items-center justify-center active:scale-95 transition-transform w-full flex-shrink-0">
+                <span class="material-symbols-outlined">vpn_key</span>
+                <span class="text-[8px] tracking-tighter text-center leading-none mt-1">PhantomPass</span>
+            </button>
+            <button data-tab="settings"
+                class="text-[#007070] hover:bg-[#00FBFB]/10 hover:text-[#00FBFB] py-3 flex flex-col items-center justify-center active:scale-95 transition-transform w-full flex-shrink-0">
+                <span class="material-symbols-outlined">tune</span>
+                <span class="text-[8px] tracking-tighter text-center leading-none mt-1">Console Adjust</span>
+            </button>
+        </div>
+        <button onclick="logout()"
+            class="text-[#007070] hover:bg-[#93000a]/20 hover:text-error py-4 flex flex-col items-center gap-1 active:scale-95 transition-transform">
+            <span class="material-symbols-outlined">logout</span>
+            <span class="text-[9px]">EXIT</span>
+        </button>
+    </aside>
+
+    <!-- Main Content Container -->
+    <main class="ml-20 mt-16 p-4 h-[calc(100vh-64px)] overflow-hidden">
+
+        <!-- TAB 1: Control Core (overview) -->
+        <div id="tab-overview" class="tab-content w-full h-full grid grid-cols-12 grid-rows-12 gap-4">
+            <!-- PANEL 1: ConsentCam & Leaflet Map Monitor (Top-Left) -->
+            <section
+                class="col-span-12 lg:col-span-7 row-span-7 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">location_searching</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;CONSENT_CAM_CITY_MONITOR</h3>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-mono text-[#002020] uppercase animate-pulse">● 7 NODES LIVE</span>
+                        <span class="text-[10px] font-mono text-[#002020] uppercase">CLICK NODE TO OPEN FEED</span>
+                    </div>
+                </div>
+
+                <div
+                    class="flex-grow grid grid-cols-1 md:grid-cols-3 min-h-[350px] lg:min-h-0 relative overflow-hidden bg-[#080808]">
+                    <!-- 2/3 Geographic Map View -->
+                    <div class="md:col-span-2 relative bg-[#080808] z-0" id="map" style="height: 100%; width: 100%;">
+                        <!-- Map Renders here -->
+                    </div>
+                    <!-- 1/3 AEGIS Camera Node Directory -->
+                    <div class="border-l border-[#00FBFB]/30 bg-[#060606] flex flex-col overflow-hidden relative animate-fade-in font-mono">
+                        <div class="bg-[#00FBFB]/10 border-b border-[#00FBFB]/20 px-3 py-2 text-[11px] text-[#00fbfb] flex justify-between items-center font-bold">
+                            <span>AEGIS :: NODE_DIRECTORY</span>
+                            <span class="animate-pulse text-green-400 font-bold text-[9px]">● SYSTEM NOMINAL</span>
+                        </div>
+                        
+                        <!-- List of camera nodes -->
+                        <div class="flex-grow overflow-y-auto p-2 space-y-2 custom-scrollbar text-white">
+                            <!-- Node 1 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_A1: Sindhi Camp</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_A_CENTRAL</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-green-500/10 text-green-400 text-[8px] font-bold border border-green-500/20">ONLINE</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.9185, 75.7900</span>
+                                    <button onclick="window.launchNodeFeed('NODE_A1')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Node 2 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_B2: MI Road Market</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_B_GRID (BIAS ALERT)</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-yellow-500/10 text-yellow-400 text-[8px] font-bold border border-yellow-500/20">MONITORED</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.9124, 75.7873</span>
+                                    <button onclick="window.launchNodeFeed('NODE_B2')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+
+                            <!-- Node 3 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_C3: Hawa Mahal Chowk</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_C_METRO</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-green-500/10 text-green-400 text-[8px] font-bold border border-green-500/20">ONLINE</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.9239, 75.8267</span>
+                                    <button onclick="window.launchNodeFeed('NODE_C3')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+
+                            <!-- Node 4 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_D4: JLN Marg Overpass</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_D_OUTPOST</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-green-500/10 text-green-400 text-[8px] font-bold border border-green-500/20">ONLINE</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.8830, 75.8070</span>
+                                    <button onclick="window.launchNodeFeed('NODE_D4')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+
+                            <!-- Node 5 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_E5: Vaishali Nagar</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_E_WEST</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-green-500/10 text-green-400 text-[8px] font-bold border border-green-500/20">ONLINE</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.9101, 75.7384</span>
+                                    <button onclick="window.launchNodeFeed('NODE_E5')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+
+                            <!-- Node 6 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_F6: Malviya Nagar</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_F_SOUTH</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-green-500/10 text-green-400 text-[8px] font-bold border border-green-500/20">ONLINE</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.8574, 75.8076</span>
+                                    <button onclick="window.launchNodeFeed('NODE_F6')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+
+                            <!-- Node 7 -->
+                            <div class="p-2 border border-[#00FBFB]/10 bg-[#0a0a0a] hover:border-[#00FBFB]/40 hover:bg-[#00FBFB]/5 transition-all flex flex-col justify-between gap-1.5 rounded-[2px]">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-[11px] font-bold text-white leading-tight">NODE_G7: Amer Checkpoint</div>
+                                        <span class="text-[9px] text-[#00FBFB]/60">ZONE_G_NORTH</span>
+                                    </div>
+                                    <span class="px-1 py-0.5 rounded-[2px] bg-green-500/10 text-green-400 text-[8px] font-bold border border-green-500/20">ONLINE</span>
+                                </div>
+                                <div class="flex justify-between items-center text-[9px] text-zinc-400">
+                                    <span>COORD: 26.9736, 75.8469</span>
+                                    <button onclick="window.launchNodeFeed('NODE_G7')" class="px-2 py-0.5 border border-[#00FBFB] text-[#00FBFB] text-[10px] font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">CONNECT</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden Legacy Elements to Avoid dashboard.js crash -->
+                        <div style="display:none;" class="hidden">
+                            <button id="phantompass-consent-btn"></button>
+                            <div id="camera-feed-container">
+                                <video id="camera-feed-webcam" autoplay playsinline></video>
+                                <img id="camera-feed-mock" src="" />
+                                <div id="blackout-warning"></div>
+                                <div id="consent-shield-warning"></div>
+                                <div id="buffer-countdown-overlay">
+                                    <span id="overlay-buffer-timer">3.0 SECS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="absolute bottom-4 left-4 font-mono text-[9px] text-outline bg-black/75 p-2 border border-[#00FBFB]/20 z-30 pointer-events-none">
+                    LAT: <span id="mouseLat">26.9124</span>° N<br />
+                    LON: <span id="mouseLon">75.7873</span>° E<br />
+                    LOC: <span id="mouseSector">SECTOR_ALPHA_01</span>
+                </div>
+            </section>
+
+            <!-- PANEL 2: AEGIS Telemetry Stream Logs (Top-Right) -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-4 cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">sync_alt</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;TELEMETRY_STREAM_LOGS</h3>
+                    </div>
+                </div>
+
+                <div class="flex-grow p-4 font-mono text-[10px] leading-tight overflow-y-auto cyber-scrollbar bg-black flex flex-col"
+                    id="panel-2-logs">
+                    <div class="text-[#00FBFB] mb-1">[SYS_INIT] Secure WebSocket pipeline online. Awaiting system
+                        logs...</div>
+                    <div class="text-white mb-1 animate-pulse cursor-active">_█</div>
+                </div>
+            </section>
+
+            <!-- PANEL 3: Privacy Health Trust Engine (Bottom-Right) -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-8 lg:row-start-5 lg:col-start-8 cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">show_chart</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;PRIVACY_INDEX_HEALTH</h3>
+                    </div>
+                </div>
+
+                <div class="flex-grow flex flex-col justify-between p-4 bg-black font-mono relative overflow-hidden"
+                    id="heatmapContainer">
+                    <div class="flex-grow flex items-center justify-center relative min-h-[160px]" id="panel-3-charts">
+                        <div class="text-center z-20">
+                            <div class="text-[9px] text-[#00FBFB] mb-1">PRIVACY_TRUST_SCORE</div>
+                            <div class="text-6xl font-black text-white tracking-tighter" id="dial-score-value">--%</div>
+                            <div class="text-[9px] text-green-400 mt-2 tracking-widest animate-pulse"
+                                id="dial-status-text">INITIALIZING ENGINE...</div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-[#00FBFB]/20 pt-3 space-y-2 text-[10px] z-20 bg-black">
+                        <div class="flex justify-between">
+                            <span class="text-outline">ACTIVE_CONSENT_TOKENS</span>
+                            <span id="metric-consents" class="text-[#00FBFB] font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-outline">BIAS_SUPPRESSIONS_LOGGED</span>
+                            <span id="metric-suppressions" class="text-yellow-500 font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-outline">EXPIRED_ZK_CREDENTIALS</span>
+                            <span id="metric-expired" class="text-white font-bold">--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANEL 4: Zone Activity & CivicVault Registry (Bottom-Left) -->
+            <section
+                class="col-span-12 lg:col-span-7 row-span-5 lg:row-start-8 lg:col-start-1 cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">database</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;ZONE_ACTIVITY_REGISTRY</h3>
+                    </div>
+                </div>
+
+                <div class="flex-grow cyber-scrollbar overflow-auto bg-black font-mono text-[11px]"
+                    id="registryContainer">
+                    <table class="w-full text-left border-collapse" id="assetTable">
+                        <thead
+                            class="sticky top-0 bg-[#0E0E0E] text-outline uppercase border-b border-[#00FBFB]/20 py-2">
+                            <tr>
+                                <th class="p-3 font-medium">Zone_ID</th>
+                                <th class="p-3 font-medium">Privacy_Index</th>
+                                <th class="p-3 font-medium">Active_Telemetry</th>
+                                <th class="p-3 font-medium text-right">Emergency_Decryption</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#00FBFB]/10 text-white" id="assetTableBody">
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_A_CENTRAL</td>
+                                <td class="p-3 text-green-400" id="zone-a-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-a-consent">88% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-[#00fbfb] text-[#00fbfb] text-[9px] font-bold">SECURED</span></td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_B_GRID</td>
+                                <td class="p-3 text-yellow-500 animate-pulse" id="zone-b-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-b-consent">75% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-yellow-500 text-yellow-500 text-[9px] font-bold animate-pulse" id="zone-b-vault">AWAITING_JURY: 2/3</span></td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_C_METRO</td>
+                                <td class="p-3 text-green-400" id="zone-c-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-c-consent">91% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-[#00fbfb] text-[#00fbfb] text-[9px] font-bold">SECURED</span></td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_D_OUTPOST</td>
+                                <td class="p-3 text-green-400" id="zone-d-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-d-consent">67% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-[#00fbfb] text-[#00fbfb] text-[9px] font-bold">SECURED</span></td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_E_WEST</td>
+                                <td class="p-3 text-green-400" id="zone-e-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-e-consent">82% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-[#00fbfb] text-[#00fbfb] text-[9px] font-bold">SECURED</span></td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_F_SOUTH</td>
+                                <td class="p-3 text-green-400" id="zone-f-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-f-consent">78% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-[#00fbfb] text-[#00fbfb] text-[9px] font-bold">SECURED</span></td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold">ZONE_G_NORTH</td>
+                                <td class="p-3 text-green-400" id="zone-g-status">NOMINAL</td>
+                                <td class="p-3 text-white" id="zone-g-consent">85% Consent</td>
+                                <td class="p-3 text-right"><span class="px-2 py-0.5 border border-[#00fbfb] text-[#00fbfb] text-[9px] font-bold">SECURED</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 2: FairWatch AI -->
+        <div id="tab-fairwatch" class="tab-content hidden w-full h-full grid grid-cols-12 grid-rows-12 gap-4">
+            <!-- Left Panel: Active Crime Forecasts -->
+            <section
+                class="col-span-12 lg:col-span-7 row-span-12 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">troubleshoot</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;ACTIVE_CRIME_FORECASTS</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[11px] overflow-auto cyber-scrollbar">
+                    <div class="mb-4 p-3 border border-[#00FBFB]/20 bg-[#00FBFB]/5">
+                        <span class="text-[#00FBFB] font-bold">[ENGINE_ACTIVE]</span> running self-auditing ML layers.
+                        SHAP parity evaluations are evaluated per inference cycle.
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead
+                            class="sticky top-0 bg-[#0E0E0E] text-outline uppercase border-b border-[#00FBFB]/20 py-2">
+                            <tr>
+                                <th class="p-3 font-medium">Inference_ID</th>
+                                <th class="p-3 font-medium">Target_Zone</th>
+                                <th class="p-3 font-medium">Confidence</th>
+                                <th class="p-3 font-medium">Fairness_Score</th>
+                                <th class="p-3 font-medium text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#00FBFB]/10 text-white">
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3">#INF-9821</td>
+                                <td class="p-3 font-bold">ZONE_A_CENTRAL</td>
+                                <td class="p-3">89.4%</td>
+                                <td class="p-3 text-green-400 font-bold">85/100</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold">PASSED</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3">#INF-9822</td>
+                                <td class="p-3 font-bold">ZONE_B_GRID</td>
+                                <td class="p-3">74.2%</td>
+                                <td class="p-3 text-red-500 font-bold animate-pulse">48/100</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-red-500 text-red-500 text-[9px] font-bold animate-pulse">SUPPRESSED</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3">#INF-9823</td>
+                                <td class="p-3 font-bold">ZONE_C_METRO</td>
+                                <td class="p-3">91.7%</td>
+                                <td class="p-3 text-green-400 font-bold">92/100</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold">PASSED</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3">#INF-9824</td>
+                                <td class="p-3 font-bold">ZONE_D_OUTPOST</td>
+                                <td class="p-3">63.1%</td>
+                                <td class="p-3 text-red-500 font-bold animate-pulse">56/100</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-red-500 text-red-500 text-[9px] font-bold animate-pulse">SUPPRESSED</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Right Top Panel: SHAP Bias Audits -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-6 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">bar_chart</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;SHAP_BIAS_WEIGHTS</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[10px] space-y-4 overflow-y-auto cyber-scrollbar">
+                    <div class="text-[9px] text-[#00FBFB] mb-2">SHAP EXPLAINABILITY VALUES (LAST CYCLE: ZONE_B_GRID)
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>DEMOGRAPHIC PARITY BIAS</span>
+                                <span class="text-red-500 font-bold">+0.40</span>
+                            </div>
+                            <div class="w-full bg-[#1C1B1B] h-2">
+                                <div class="bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" style="width: 80%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>INCOME DISPARITY VALUE</span>
+                                <span class="text-red-500 font-bold">+0.30</span>
+                            </div>
+                            <div class="w-full bg-[#1C1B1B] h-2">
+                                <div class="bg-red-500 h-2 shadow-[0_0_5px_#ef4444]" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>HISTORICAL INCIDENT DATA BASELINE</span>
+                                <span class="text-[#00FBFB] font-bold">+0.10</span>
+                            </div>
+                            <div class="w-full bg-[#1C1B1B] h-2">
+                                <div class="bg-[#00FBFB] h-2 shadow-[0_0_5px_#00fbfb]" style="width: 20%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>TIME-OF-DAY ACTIVITY WEIGHT</span>
+                                <span class="text-[#00FBFB] font-bold">-0.05</span>
+                            </div>
+                            <div class="w-full bg-[#1C1B1B] h-2 flex justify-end">
+                                <div class="bg-green-500 h-2 shadow-[0_0_5px_#22c55e]" style="width: 10%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Bottom Panel: Suppressed Alerts Log -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-6 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">history</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;SUPPRESSED_ALERTS_LOG</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[9px] overflow-y-auto cyber-scrollbar space-y-2">
+                    <div class="text-yellow-500 animate-pulse font-bold">[19:42:01] CRITICAL SUPPRESSION: Zone B crime
+                        forecast blocked. Demographic bias surpassed 65% threshold.</div>
+                    <div class="text-[#00FBFB] opacity-80">[19:35:14] AUDIT: Clean run in Zone A. No suppressions
+                        triggered. (Fairness score: 85/100)</div>
+                    <div class="text-yellow-500 font-bold">[19:12:05] CRITICAL SUPPRESSION: Zone D property alert
+                        suppressed. Income parity offset (0.45) breached limit.</div>
+                    <div class="text-[#00FBFB] opacity-80">[18:59:44] AUDIT: Clean run in Zone C. No suppressions
+                        triggered. (Fairness score: 92/100)</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 3: CivicVault -->
+        <div id="tab-civicvault" class="tab-content hidden w-full h-full grid grid-cols-12 grid-rows-12 gap-4">
+            <!-- Left Panel: 3-of-5 Citizen Signatures -->
+            <section
+                class="col-span-12 lg:col-span-7 row-span-12 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">gavel</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;CITIZEN_JURY_PORTAL</h3>
+                    </div>
+                </div>
+                <div
+                    class="flex-grow p-6 bg-black font-mono flex flex-col justify-between overflow-auto cyber-scrollbar">
+                    <div class="text-center mb-4">
+                        <h4 class="text-[#00FBFB] text-sm font-bold mb-2">3-OF-5 CITIZEN SIGNATURE PUZZLE CO-SIGNING
+                        </h4>
+                        <p class="text-[10px] text-outline uppercase max-w-lg mx-auto">
+                            Emergency decryption of zone payloads requires active real-time cryptographic consent from
+                            at least 3 out of 5 designated citizen jury keyholders.
+                        </p>
+                    </div>
+
+                    <!-- Visual Signature Hexagons -->
+                    <div class="grid grid-cols-5 gap-4 my-6">
+                        <div
+                            class="border border-green-500 bg-green-500/10 p-4 text-center rounded flex flex-col items-center shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                            <span class="material-symbols-outlined text-green-400 text-3xl mb-1">lock_open</span>
+                            <span class="text-[10px] text-green-400 font-bold">CITIZEN_1</span>
+                            <span class="text-[8px] text-outline mt-1 font-bold">SIGNED</span>
+                            <span class="text-[7px] text-green-400/80 truncate w-full mt-1">0x9f1a...</span>
+                        </div>
+                        <div
+                            class="border border-green-500 bg-green-500/10 p-4 text-center rounded flex flex-col items-center shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                            <span class="material-symbols-outlined text-green-400 text-3xl mb-1">lock_open</span>
+                            <span class="text-[10px] text-green-400 font-bold">CITIZEN_2</span>
+                            <span class="text-[8px] text-outline mt-1 font-bold">SIGNED</span>
+                            <span class="text-[7px] text-green-400/80 truncate w-full mt-1">0x7bc2...</span>
+                        </div>
+                        <div id="jury-citizen-3"
+                            class="border border-yellow-500 bg-yellow-500/5 p-4 text-center rounded flex flex-col items-center animate-pulse">
+                            <span
+                                class="material-symbols-outlined text-yellow-500 text-3xl mb-1 animate-spin">sync</span>
+                            <span class="text-[10px] text-yellow-500 font-bold">CITIZEN_3</span>
+                            <span class="text-[8px] text-yellow-500 mt-1 font-bold">SIGNING...</span>
+                            <span class="text-[7px] text-yellow-500/80 truncate w-full mt-1">AWAITING</span>
+                        </div>
+                        <div id="jury-citizen-4"
+                            class="border border-white/10 bg-[#0E0E0E] p-4 text-center rounded flex flex-col items-center opacity-40">
+                            <span class="material-symbols-outlined text-white text-3xl mb-1">lock</span>
+                            <span class="text-[10px] text-white font-bold">CITIZEN_4</span>
+                            <span class="text-[8px] text-outline mt-1">AWAITING</span>
+                            <span class="text-[7px] text-outline truncate w-full mt-1">LOCKED</span>
+                        </div>
+                        <div id="jury-citizen-5"
+                            class="border border-white/10 bg-[#0E0E0E] p-4 text-center rounded flex flex-col items-center opacity-40">
+                            <span class="material-symbols-outlined text-white text-3xl mb-1">lock</span>
+                            <span class="text-[10px] text-white font-bold">CITIZEN_5</span>
+                            <span class="text-[8px] text-outline mt-1">AWAITING</span>
+                            <span class="text-[7px] text-outline truncate w-full mt-1">LOCKED</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-[#00FBFB]/20 p-3 bg-[#00FBFB]/5 text-center rounded">
+                        <span class="text-[10px] uppercase text-[#00FBFB]">Jury Progress:</span>
+                        <div class="w-full bg-[#1C1B1B] h-2.5 rounded-full mt-2 relative overflow-hidden">
+                            <div id="jury-progress-bar" class="bg-yellow-500 h-full shadow-[0_0_8px_#eab308]"
+                                style="width: 40%"></div>
+                        </div>
+                        <div class="flex justify-between text-[8px] mt-1 text-outline font-bold">
+                            <span>0%</span>
+                            <span id="jury-progress-text" class="text-yellow-500">2 OF 5 SIGNED (WAITING FOR CITIZEN
+                                3)</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Live Decryption Console -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-12 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">terminal</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;DECRYPTION_CONSOLE</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[10px] flex flex-col justify-between overflow-hidden">
+                    <div class="flex-grow flex flex-col justify-between overflow-hidden">
+                        <div class="text-[#00FBFB] mb-2">[CONSOLE_INITIALIZED] READY FOR SECURE DECRYPT PIPELINE...
+                        </div>
+
+                        <!-- Glitch Cryptographic Block -->
+                        <div
+                            class="flex-grow border border-[#00FBFB]/30 bg-[#030303] p-4 text-center rounded relative overflow-y-auto cyber-scrollbar flex items-center justify-center min-h-[150px]">
+                            <div id="encrypted-payload-box"
+                                class="text-[10px] text-green-400 font-bold break-all whitespace-pre-wrap leading-tight max-w-[90%]">
+                                &amp;$#@!_ENCRYPTED_AEGIS_PAYLOAD_&amp;^%*()_
+                                0x84FD9902AF218849-0192739182379812
+                                48D7F9E01C9A4B8F3E2D1C0B9A8F7E6D
+                                5C4B3A291E0D9C8B7A6F5E4D3C2B1A0F
+                            </div>
+                        </div>
+
+                        <div id="decryption-console-logs"
+                            class="h-20 border-t border-[#00FBFB]/10 pt-2 text-[8px] text-outline overflow-y-auto cyber-scrollbar mt-2">
+                            [SYS] Vault standby. Trigger decryption key generation.
+                        </div>
+                    </div>
+
+                    <button onclick="startCitizenDecryptionSimulation()"
+                        class="mt-4 w-full bg-[#00FBFB] text-[#050505] shadow-[0_0_15px_#00FBFB] hover:bg-[#00FBFB]/80 py-3 text-xs font-bold uppercase tracking-widest transition-all">
+                        INITIATE DECRYPTION
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 4: PhantomPass -->
+        <div id="tab-phantompass" class="tab-content hidden w-full h-full grid grid-cols-12 grid-rows-12 gap-4">
+            <!-- Left Panel: Active Consent Registries -->
+            <section
+                class="col-span-12 lg:col-span-7 row-span-12 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">vpn_key</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;ACTIVE_CONSENT_REGISTRIES</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[11px] overflow-auto cyber-scrollbar">
+                    <div class="mb-4 p-3 border border-[#00FBFB]/20 bg-[#00FBFB]/5">
+                        <span class="text-[#00FBFB] font-bold">[ZK_REGISTRY_STANDBY]</span> Consent tokens are
+                        registered in localized wallets and verified asynchronously using ZK proofs.
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead
+                            class="sticky top-0 bg-[#0E0E0E] text-outline uppercase border-b border-[#00FBFB]/20 py-2">
+                            <tr>
+                                <th class="p-3 font-medium">Token_ID</th>
+                                <th class="p-3 font-medium">Resident_Hash</th>
+                                <th class="p-3 font-medium">Time_Remaining</th>
+                                <th class="p-3 font-medium text-right">Privacy_State</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#00FBFB]/10 text-white">
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold text-[#00FBFB]">#TKN-4809</td>
+                                <td class="p-3">0x8a92f0...</td>
+                                <td class="p-3">04:21 mins</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold">CONSENTED</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold text-[#00FBFB]">#TKN-1299</td>
+                                <td class="p-3">0x9c31fa...</td>
+                                <td class="p-3">01:44 mins</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold">CONSENTED</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold text-red-500 animate-pulse">#TKN-9921</td>
+                                <td class="p-3">0xdd291a...</td>
+                                <td class="p-3">00:00 mins</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-red-500 text-red-500 text-[9px] font-bold animate-pulse">REVOKED</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-[#00FBFB]/5">
+                                <td class="p-3 font-bold text-[#00FBFB]">#TKN-7811</td>
+                                <td class="p-3">0x2f90ea...</td>
+                                <td class="p-3">12:59 mins</td>
+                                <td class="p-3 text-right">
+                                    <span
+                                        class="px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold">CONSENTED</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Right Top Panel: Walkout Revocation Buffer -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-6 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">schedule</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;WALKOUT_REVOCATION_BUFFER</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[10px] space-y-3 overflow-y-auto cyber-scrollbar">
+                    <div class="text-[9px] text-yellow-500 font-bold mb-2">ACTIVE DURATION DELAY BUFFERS (SHUTDOWN
+                        COOLDOWN)</div>
+                    <div class="space-y-3">
+                        <div class="border border-yellow-500/20 bg-yellow-500/5 p-2 flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-[#00FBFB]">#BUFFER_01 // COOLDOWN ACTIVE</div>
+                                <div class="text-[8px] text-outline mt-0.5">RESIDENT ID: 0x9812A // SHUTDOWN DELAY</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-yellow-500 font-bold animate-pulse">04.2 SECS</div>
+                                <div class="text-[7px] text-outline">GRACE_PERIOD</div>
+                            </div>
+                        </div>
+                        <div
+                            class="border border-green-500/20 bg-green-500/5 p-2 flex justify-between items-center opacity-60">
+                            <div>
+                                <div class="font-bold text-green-400">#BUFFER_02 // COMPLETE</div>
+                                <div class="text-[8px] text-outline mt-0.5">RESIDENT ID: 0x221FA // PURGE DONE</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-green-400 font-bold">0.0 SECS</div>
+                                <div class="text-[7px] text-outline">SHUTDOWN_OK</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Bottom Panel: ZK-Residency Proof Hashes -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-6 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">lock</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;ZERO_KNOWLEDGE_RESIDENCY_HASHES</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 bg-black font-mono text-[9px] overflow-y-auto cyber-scrollbar space-y-2">
+                    <div class="text-green-400 font-bold">[VERIFIED] ZK-Proof Ward residency verified for token
+                        #TKN-4809. (Address &amp; name suppressed).</div>
+                    <div class="text-green-400 font-bold">[VERIFIED] ZK-Proof Ward residency verified for token
+                        #TKN-1299. (Address &amp; name suppressed).</div>
+                    <div class="text-red-500 font-bold animate-pulse">[INVALIDATED] ZK-Proof token #TKN-9921
+                        verification expired. De-authorizing cam pipeline...</div>
+                    <div class="text-green-400 font-bold">[VERIFIED] ZK-Proof Ward residency verified for token
+                        #TKN-7811. (Address &amp; name suppressed).</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 5: Console Adjust -->
+        <div id="tab-settings" class="tab-content hidden w-full h-full grid grid-cols-12 grid-rows-12 gap-4">
+            <!-- Left Panel: Manual Threshold Adjustments -->
+            <section
+                class="col-span-12 lg:col-span-7 row-span-12 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">tune</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;SYSTEM_MANUAL_ADJUST</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-6 bg-black font-mono text-[11px] space-y-6 overflow-auto cyber-scrollbar">
+                    <div class="mb-4 p-3 border border-[#00FBFB]/20 bg-[#00FBFB]/5">
+                        <span class="text-[#00FBFB] font-bold">[MANUAL_THROTTLE]</span> Adjust thresholds for
+                        surveillance levels and self-auditing AI triggers.
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Slider 1 -->
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <label for="throttle-range">MANUAL PRIVACY THROTTLE SPEED</label>
+                                <span id="throttle-range-val" class="text-[#00FBFB]">80%</span>
+                            </div>
+                            <input id="throttle-range" type="range" min="10" max="100" value="80"
+                                oninput="document.getElementById('throttle-range-val').innerText = this.value + '%'"
+                                class="w-full accent-[#00FBFB] bg-[#1C1B1B]">
+                            <p class="text-[8px] text-outline mt-1">REDUCES MONITORED RESOLUTION AND FRAME RATES AS THE
+                                PERCENTAGE DROPS.</p>
+                        </div>
+
+                        <!-- Slider 2 -->
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <label for="fairness-range">AI ETHICAL BIAS SHAP CUTOFF</label>
+                                <span id="fairness-range-val" class="text-[#00FBFB]">65%</span>
+                            </div>
+                            <input id="fairness-range" type="range" min="30" max="95" value="65"
+                                oninput="document.getElementById('fairness-range-val').innerText = this.value + '%'"
+                                class="w-full accent-[#00FBFB] bg-[#1C1B1B]">
+                            <p class="text-[8px] text-outline mt-1">SUPPRESSES PREDICTIVE INTELLIGENCE WHEN SHAP ETHICAL
+                                FAIRNESS DROPS BELOW THIS MARK.</p>
+                        </div>
+
+                        <!-- Selector -->
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <span>CONSENT CAM SCANNING SENSITIVITY</span>
+                                <span class="text-yellow-500">BALANCED</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 mt-1">
+                                <button
+                                    class="border border-[#00FBFB]/20 py-2 hover:bg-[#00FBFB]/10 text-outline hover:text-white">STRICT</button>
+                                <button
+                                    class="border border-[#00FBFB] bg-[#00FBFB]/10 text-[#00FBFB] py-2 font-bold">BALANCED</button>
+                                <button
+                                    class="border border-[#00FBFB]/20 py-2 hover:bg-[#00FBFB]/10 text-outline hover:text-white">LAX</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Demo Spike & System Triggers -->
+            <section
+                class="col-span-12 lg:col-span-5 row-span-12 relative cyber-border bg-surface-container-lowest flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+                <div class="bg-primary-fixed px-3 py-1 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#002020] text-sm">warning</span>
+                        <h3 class="text-on-primary-fixed font-bold text-xs uppercase tracking-widest flicker-h3">
+                            &gt;DEMO_SPIKE_RESET_TRIGGERS</h3>
+                    </div>
+                </div>
+                <div class="flex-grow p-6 bg-black font-mono text-[10px] flex flex-col justify-between overflow-hidden">
+                    <div class="space-y-4">
+                        <div class="p-3 border border-yellow-500/20 bg-yellow-500/5 rounded">
+                            <span class="text-yellow-500 font-bold">[DEMO_INSTRUCTIONS]</span> Trigger custom anomalies
+                            to show how the system responds to privacy threats, opt-outs, and bias spikes dynamically.
+                        </div>
+
+                        <div class="space-y-3">
+                            <button onclick="triggerDemoSpike()"
+                                class="w-full bg-red-600/20 text-red-400 border border-red-500 hover:bg-red-500 hover:text-black py-4 font-bold uppercase tracking-wider transition-all duration-300 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                                TRIGGER DEMO SPIKE (CRITICAL SHUTDOWN)
+                            </button>
+                            <button onclick="resetSystemDemo()"
+                                class="w-full bg-[#00FBFB]/20 text-[#00FBFB] border border-[#00FBFB] hover:bg-[#00FBFB] hover:text-black py-4 font-bold uppercase tracking-wider transition-all duration-300 shadow-[0_0_10px_rgba(0,251,251,0.2)]">
+                                RESET AEGIS STATE (NOMINAL OPERATION)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-[#00FBFB]/10 pt-4 text-center">
+                        <span class="text-[9px] text-outline uppercase">MISSION CONTROL BACKEND STATUS</span>
+                        <div class="flex justify-center gap-4 mt-2">
+                            <span class="flex items-center gap-1 text-[8px] text-green-400 font-bold"><span
+                                    class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> PORT 5000:
+                                ONLINE</span>
+                            <span class="flex items-center gap-1 text-[8px] text-green-400 font-bold"><span
+                                    class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> PORT 8000:
+                                ONLINE</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer Status -->
+    <footer
+        class="fixed bottom-0 left-0 w-full h-6 bg-black z-50 flex items-center px-6 justify-between border-t border-outline-variant/10 pointer-events-none">
+        <div class="text-[9px] text-outline tracking-widest font-mono">
+            SYS_HASH: 0x8849-AF21-9902 | <span class="text-primary-container">CHECKSUM_VALID</span>
+        </div>
+        <div class="text-[9px] text-outline font-mono">AEGIS OPERATIONAL GRIDS ACTIVE</div>
+    </footer>
+
+    <!-- PhantomPass Camera Modal Overlay -->
+    <div id="phantompass-cam-modal" class="hidden fixed inset-0 z-[9999] bg-black/95 flex-col"
+        style="backdrop-filter: blur(4px);">
+
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-3 border-b border-[#00fbfb]/30 bg-[#050505]">
+            <div class="flex items-center gap-4 font-mono">
+                <span class="material-symbols-outlined text-[#00fbfb] animate-pulse">videocam</span>
+                <div>
+                    <div class="text-[#00fbfb] font-bold text-sm tracking-widest uppercase" id="pm-node-id">NODE_XX
+                    </div>
+                    <div class="text-white/60 text-[9px] uppercase tracking-wider" id="pm-node-name">Loading...</div>
+                </div>
+                <div class="ml-6 border-l border-[#00fbfb]/30 pl-4">
+                    <div class="text-[9px] text-white/40 uppercase">Zone</div>
+                    <div class="text-[#00fbfb] text-[10px] font-bold" id="pm-node-zone">--</div>
+                </div>
+                <div class="ml-4 border-l border-[#00fbfb]/30 pl-4">
+                    <div id="pm-model-status" class="text-[8px] font-mono text-yellow-500 animate-pulse">GPU BACKEND:
+                        CONNECTING...</div>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                        <span class="text-[8px] font-mono text-red-400">LIVE REC</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeCameraModal()"
+                class="text-[#00fbfb] hover:text-red-400 transition-colors active:scale-95">
+                <span class="material-symbols-outlined text-2xl">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Body: Video + Registry -->
+        <div class="flex flex-1 overflow-hidden" style="height:calc(100vh - 56px)">
+
+            <!-- Left: Video Canvas Feed (60%) -->
+            <div class="flex flex-col" style="width:60%;">
+                <!-- Canvas Feed (face detection renders here) -->
+                <div class="relative flex-1 bg-[#000] overflow-hidden flex items-center justify-center">
+                    <!-- No video element needed — frames stream from GPU backend via WebSocket -->
+                    <canvas id="pm-canvas" class="max-w-full max-h-full object-contain"
+                        style="z-index:1; width:100%; height:100%; object-fit:contain;"></canvas>
+                    <!-- Overlay HUD corners -->
+                    <div class="absolute top-3 left-3 font-mono text-[8px] text-[#00fbfb]/60 pointer-events-none">
+                        <div>AEGIS :: CONSENT_CAM_FEED</div>
+                        <div id="pm-face-count" class="text-[#00fbfb] font-bold mt-1">0 DETECTED</div>
+                        <div id="pm-pause-badge"
+                            class="hidden mt-1 text-[#00fbfb] font-black tracking-widest animate-pulse">┃┃ PAUSED</div>
+                    </div>
+                    <div
+                        class="absolute top-3 right-3 font-mono text-[8px] text-[#00fbfb]/60 pointer-events-none text-right">
+                        <div class="animate-pulse text-red-400 font-bold">● REC</div>
+                        <div id="pm-fps" class="text-green-400 font-bold mt-0.5">-- FPS</div>
+                        <div class="text-[#00fbfb]/40 mt-1">PHANTOMPASS v2 GPU</div>
+                    </div>
+                    <!-- Scan line effect -->
+                    <div class="absolute inset-0 pointer-events-none"
+                        style="background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,251,251,0.01) 2px, rgba(0,251,251,0.01) 4px); z-index:2">
+                    </div>
+                    <!-- Blackout Warning Overlay -->
+                    <div id="pm-blackout-warning"
+                        class="absolute inset-0 z-10 hidden flex-col items-center justify-center bg-black/85 text-red-500 font-mono select-none pointer-events-none text-center">
+                        <div class="border border-red-500 bg-red-950/20 p-6 rounded max-w-xs shadow-[0_0_20px_#ff0000] flex flex-col items-center gap-2">
+                            <span class="material-symbols-outlined text-red-500 text-4xl animate-bounce">warning</span>
+                            <h3 class="text-xs font-black tracking-widest uppercase text-white">CRITICAL PRIVACY BLACKOUT</h3>
+                            <p class="text-[8px] text-zinc-400 uppercase leading-relaxed">Surveillance Throttling Level: SHUTDOWN<br/>Facial Recognition Stream Suspended due to trust health collapse.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playback Controls -->
+                <div class="border-t border-[#00fbfb]/20 bg-[#060606] px-4 py-2 flex flex-col gap-1.5">
+                    <!-- Progress bar -->
+                    <div class="flex items-center gap-2">
+                        <div id="pm-time-display" class="text-[9px] font-mono text-[#00fbfb]/60 w-20 shrink-0">00:00 /
+                            00:00</div>
+                        <div class="flex-1 relative h-2 bg-[#1a1a1a] rounded-none cursor-pointer group"
+                            onclick="camSeekToClick(event, this)">
+                            <div id="pm-progress-fill"
+                                class="absolute left-0 top-0 h-full bg-[#00fbfb] transition-all duration-200"
+                                style="width:0%;"></div>
+                            <div
+                                class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-[#00fbfb]/10 transition-opacity">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Buttons -->
+                    <div class="flex items-center justify-center gap-2">
+                        <!-- -10s -->
+                        <button onclick="camSeek(-10)" title="Rewind 10s"
+                            class="flex items-center gap-0.5 px-2 py-1 text-[9px] font-bold font-mono text-[#00fbfb]/60 border border-[#00fbfb]/20 hover:border-[#00fbfb]/60 hover:text-[#00fbfb] hover:bg-[#00fbfb]/5 active:scale-95 transition-all">
+                            <span class="material-symbols-outlined text-[13px]">fast_rewind</span>10s
+                        </button>
+                        <!-- -5s -->
+                        <button onclick="camSeek(-5)" title="Rewind 5s"
+                            class="flex items-center gap-0.5 px-2 py-1 text-[9px] font-bold font-mono text-[#00fbfb]/60 border border-[#00fbfb]/20 hover:border-[#00fbfb]/60 hover:text-[#00fbfb] hover:bg-[#00fbfb]/5 active:scale-95 transition-all">
+                            <span class="material-symbols-outlined text-[13px]">replay_5</span>
+                        </button>
+                        <!-- Play/Pause -->
+                        <button id="pm-play-pause-btn" onclick="camTogglePlay()" title="Pause"
+                            class="flex items-center justify-center w-9 h-9 text-[#00fbfb] border-2 border-[#00fbfb] hover:bg-[#00fbfb]/10 active:scale-95 transition-all shadow-[0_0_12px_rgba(0,251,251,0.3)]">
+                            <span class="material-symbols-outlined text-base">pause</span>
+                        </button>
+                        <!-- +5s -->
+                        <button onclick="camSeek(5)" title="Forward 5s"
+                            class="flex items-center gap-0.5 px-2 py-1 text-[9px] font-bold font-mono text-[#00fbfb]/60 border border-[#00fbfb]/20 hover:border-[#00fbfb]/60 hover:text-[#00fbfb] hover:bg-[#00fbfb]/5 active:scale-95 transition-all">
+                            <span class="material-symbols-outlined text-[13px]">forward_5</span>
+                        </button>
+                        <!-- +10s -->
+                        <button onclick="camSeek(10)" title="Forward 10s"
+                            class="flex items-center gap-0.5 px-2 py-1 text-[9px] font-bold font-mono text-[#00fbfb]/60 border border-[#00fbfb]/20 hover:border-[#00fbfb]/60 hover:text-[#00fbfb] hover:bg-[#00fbfb]/5 active:scale-95 transition-all">
+                            <span class="material-symbols-outlined text-[13px]">fast_forward</span>10s
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cam Log Console -->
+                <div class="border-t border-[#00fbfb]/20 bg-[#030303] p-3 font-mono overflow-y-auto cyber-scrollbar"
+                    style="height:130px;">
+                    <div class="text-[8px] text-[#00fbfb]/50 uppercase tracking-widest mb-1">PHANTOMPASS SYSTEM LOG
+                    </div>
+                    <div id="pm-cam-log" class="space-y-0.5"></div>
+                </div>
+            </div>
+
+            <!-- Right: Face Consent Registry (40%) -->
+            <div class="flex flex-col border-l border-[#00fbfb]/20" style="width:40%;">
+
+                <!-- Registry Header -->
+                <div class="px-4 py-3 bg-[#050505] border-b border-[#00fbfb]/20 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#00fbfb] text-base">person_search</span>
+                    <div>
+                        <div class="text-[#00fbfb] text-xs font-bold font-mono uppercase tracking-widest">FACE CONSENT
+                            REGISTRY</div>
+                        <div class="text-[9px] text-white/40 font-mono">ZK-TOKEN AUTO-ASSIGNED PER DETECTED FACE</div>
+                    </div>
+                </div>
+
+                <!-- Info Banner -->
+                <div
+                    class="mx-4 mt-3 p-3 border border-[#00fbfb]/20 bg-[#00fbfb]/5 font-mono text-[9px] text-[#00fbfb]/80">
+                    <span class="text-[#00fbfb] font-bold">[PHANTOMPASS]</span> Each detected face is auto-registered
+                    with a ZK consent token.
+                    Faces are <span class="text-green-400 font-bold">BLURRED</span> by default.
+                    Hit <span class="text-red-400 font-bold">REVOKE</span> to unblur a specific face and simulate
+                    consent withdrawal.
+                </div>
+
+                <!-- Face Table -->
+                <div class="flex-1 overflow-y-auto cyber-scrollbar">
+                    <table class="w-full border-collapse font-mono">
+                        <thead class="sticky top-0 bg-[#0a0a0a] border-b border-[#00fbfb]/20">
+                            <tr>
+                                <th class="p-2 text-left text-[9px] text-[#00fbfb]/60 uppercase font-medium">Face_ID
+                                </th>
+                                <th class="p-2 text-left text-[9px] text-[#00fbfb]/60 uppercase font-medium">Token</th>
+                                <th class="p-2 text-left text-[9px] text-[#00fbfb]/60 uppercase font-medium">Time</th>
+                                <th class="p-2 text-left text-[9px] text-[#00fbfb]/60 uppercase font-medium">State</th>
+                                <th class="p-2 text-right text-[9px] text-[#00fbfb]/60 uppercase font-medium">Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="pm-face-registry-body" class="divide-y divide-[#00fbfb]/10">
+                            <tr>
+                                <td colspan="5" class="p-4 text-center text-[#00fbfb]/40 text-[10px]">Awaiting face
+                                    detections...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bottom Controls -->
+                <div class="border-t border-[#00fbfb]/20 p-4 bg-[#050505] space-y-2">
+                    <div class="text-[8px] font-mono text-white/40 uppercase tracking-widest mb-2">BULK SIMULATION
+                        CONTROLS</div>
+                    <div class="flex gap-2">
+                        <button onclick="revokeAllConsents()"
+                            class="flex-1 py-2 text-[8px] font-bold font-mono border border-red-500 text-red-400 hover:bg-red-500/10 active:scale-95 transition-all uppercase tracking-wider">
+                            REVOKE ALL CONSENTS
+                        </button>
+                        <button onclick="restoreAllConsents()"
+                            class="flex-1 py-2 text-[8px] font-bold font-mono border border-green-500 text-green-400 hover:bg-green-500/10 active:scale-95 transition-all uppercase tracking-wider">
+                            RESTORE ALL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /PhantomPass Camera Modal -->
+
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="camera-node.js"></script>
+</body>
+
+</html>

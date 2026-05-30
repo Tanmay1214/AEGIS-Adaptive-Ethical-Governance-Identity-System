@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS Citizen Dynamic Consent Portal</title>
+
+    <!-- Google Fonts & Material Icons (Cloned from Dashboard Theme) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['JetBrains Mono', 'monospace'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Sleek Cyberpunk Styling (Aligned with Dashboard CSS) -->
+    <style>
+        body {
+            background-color: #050505;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 999;
+        }
+
+        .crt-overlay::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 0%, rgba(0, 255, 251, 0.08) 50%, rgba(18, 16, 16, 0) 100%);
+            background-size: 100% 120px;
+            z-index: 999;
+            pointer-events: none;
+            animation: v-scan 10s linear infinite;
+        }
+
+        @keyframes v-scan {
+            0% {
+                transform: translateY(-120px);
+            }
+
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+
+        .cyber-border {
+            border: 1px solid #00FBFB;
+            box-shadow: 0 0 8px rgba(0, 251, 251, 0.2);
+            background-color: #0c0c0c !important;
+            backdrop-filter: blur(12px);
+        }
+
+        .cyber-border:hover {
+            border-color: #00FBFB;
+            box-shadow: 0 0 15px rgba(0, 251, 251, 0.4);
+        }
+
+        /* Custom neon glowing brackets */
+        .corner-bracket-tl {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid #00FBFB;
+            border-left: 2px solid #00FBFB;
+        }
+
+        .corner-bracket-br {
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 8px;
+            height: 8px;
+            border-bottom: 2px solid #00FBFB;
+            border-right: 2px solid #00FBFB;
+        }
+
+        /* Cyber-toggle custom transition */
+        .toggle-dot {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:checked~.toggle-bg {
+            background-color: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        input:checked~.toggle-dot {
+            transform: translateX(100%);
+        }
+
+        /* Retro log text styling */
+        .text-outline {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Scrollbar customizing */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0e0e0e;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #00FBFB;
+            box-shadow: 0 0 5px #00FBFB;
+        }
+    </style>
+</head>
+
+<body
+    class="text-slate-100 flex flex-col items-center justify-between px-4 pb-4 pt-24 md:px-8 md:pb-8 md:pt-28 font-mono">
+    <div class="crt-overlay"></div>
+
+    <!-- Header Panel (Cloned from Dashboard for Visual Consistency) -->
+    <header
+        class="bg-[#050505] text-white font-mono uppercase tracking-tighter text-sm border-b-2 border-[#00fbfb] shadow-[0_0_15px_rgba(0,251,251,0.3)] flex justify-between items-center w-full px-6 py-2.5 z-50 fixed top-0 left-0">
+        <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined text-[#00fbfb]" data-icon="terminal">terminal</span>
+            <div class="flex items-center gap-3 relative">
+                <h1 class="text-base md:text-lg font-black text-white uppercase tracking-widest animate-pulse">
+                    &gt;AEGIS_OS v1.0 // CITIZEN_PORTAL</h1>
+                <span class="material-symbols-outlined text-[#00fbfb] text-base animate-pulse"
+                    data-icon="fingerprint">fingerprint</span>
+            </div>
+        </div>
+
+        <div class="hidden md:flex gap-8 items-center font-mono">
+            <div class="flex gap-2 items-center text-green-400">
+                <span class="w-2 h-2 bg-green-400 block animate-pulse"></span>
+                <span class="text-[10px]">STATUS: OPERATIONAL</span>
+            </div>
+            <div class="flex gap-2 items-center text-[#00fbfb] opacity-80">
+                <span class="w-2 h-2 bg-[#00fbfb] block animate-pulse"></span>
+                <span class="text-[10px]">CONNECTION: PORT_5000_SECURE</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+
+        <!-- COLUMN 1: DYNAMIC CONSENT SWITCH (Col-7) -->
+        <div class="col-span-1 lg:col-span-7 flex flex-col gap-6">
+
+            <!-- Dynamic Consent Control Card -->
+            <section class="relative cyber-border bg-slate-950/40 p-6 flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+
+                <h2
+                    class="font-display font-bold text-white text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#00FBFB] text-lg">track_changes</span>
+                    1. Dynamic Geolocation Consent
+                </h2>
+
+                <p class="text-xs text-slate-400 mb-6 font-mono leading-relaxed">
+                    Toggle your surveillance permission state in real-time. Revoking consent instantly draws privacy
+                    shields (Gaussian blur) on face coordinates across all city camera nodes.
+                </p>
+
+                <!-- Inputs and Toggle UI -->
+                <div
+                    class="bg-black/60 border border-white/5 p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-[8px] font-mono text-outline uppercase font-bold">CITIZEN IDENTIFIER
+                            TOKEN</label>
+                        <select id="citizen-id-select"
+                            class="bg-zinc-900 border border-[#00FBFB]/30 text-white font-mono text-xs p-1.5 focus:border-[#00FBFB] outline-none">
+                            <option value="citizen_token_1">CITIZEN_TOKEN_1 (Active Resident)</option>
+                            <option value="citizen_token_2">CITIZEN_TOKEN_2 (Active Operator)</option>
+                            <option value="citizen_token_test">CITIZEN_TOKEN_TEST (Testing Interface)</option>
+                        </select>
+                    </div>
+
+                    <div
+                        class="flex items-center justify-between gap-4 border-t sm:border-t-0 border-[#00FBFB]/20 pt-4 sm:pt-0">
+                        <div class="text-right">
+                            <span id="consent-state-txt"
+                                class="text-xs font-mono font-bold text-green-400 block">CONSENT: ACTIVE</span>
+                            <span class="text-[8px] text-outline font-mono block">WALKOUT BUFFER DELAY: 3.0s</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="consent-toggle" checked class="sr-only peer"
+                                onchange="handleConsentToggle()">
+                            <div class="w-12 h-6 bg-zinc-800 rounded-full toggle-bg border border-white/10 relative">
+                                <div
+                                    class="toggle-dot absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.3)] flex items-center justify-center">
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Live Status Message -->
+                <div id="consent-log-container"
+                    class="mt-4 p-3 font-mono text-[9px] bg-green-500/10 border border-green-500/20 text-green-400 rounded">
+                    [CONSENT_STATE] Permission verified for current coordinates. You are in SECURED unblurred status in
+                    Sector Alpha.
+                </div>
+            </section>
+
+            <!-- CivicVault Encryption Reporting Card -->
+            <section class="relative cyber-border bg-slate-950/40 p-6 flex flex-col overflow-hidden">
+                <div class="corner-bracket-tl"></div>
+                <div class="corner-bracket-br"></div>
+
+                <h2
+                    class="font-display font-bold text-white text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#00FBFB] text-lg">gavel</span>
+                    2. CivicVault Emergency Reporting
+                </h2>
+
+                <p class="text-xs text-slate-400 mb-4 font-mono leading-relaxed">
+                    Submit an encrypted, secure report of unlawful surveillance or ethical profiling. CivicVault
+                    leverages Shamir's Secret Sharing (SSS) key splitting, requiring a 3-of-5 citizen jury consensus to
+                    decrypt and release.
+                </p>
+
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="block text-[8px] font-mono text-outline uppercase font-bold">EMERGENCY REPORT
+                            PAYLOAD (Raw Text)</label>
+                        <textarea id="vault-payload" rows="3"
+                            class="w-full bg-black/80 border border-[#00FBFB]/20 text-white font-mono text-xs p-2 focus:border-[#00FBFB] outline-none resize-none"
+                            placeholder="Describe the surveillance violation (e.g. Unlawful profiling on Grid Sector 4)..."></textarea>
+                    </div>
+
+                    <div class="flex justify-between items-center gap-4">
+                        <span class="text-[9px] font-mono text-outline leading-tight">Shares Split: 5
+                            Jurors<br>Threshold Required: 3-of-5 Consensus</span>
+                        <button onclick="submitCivicVaultReport()"
+                            class="px-4 py-2 border border-[#00FBFB] bg-[#00FBFB]/5 text-[#00FBFB] text-xs font-bold hover:bg-[#00FBFB]/20 active:scale-95 transition-all rounded-[2px]">
+                            FILE CRYPTOGRAPHIC REPORT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Result box -->
+                <div id="vault-result-box"
+                    class="hidden mt-4 p-3 bg-black/60 border border-white/5 font-mono text-[9px] text-[#00FBFB]">
+                    <!-- Output goes here -->
+                </div>
+            </section>
+
+        </div>
+
+        <!-- COLUMN 2: PHANTOMPASS ZK PROOFS (Col-5) -->
+        <div class="col-span-1 lg:col-span-5 flex flex-col gap-6">
+
+            <!-- PhantomPass ZK-Token Request Card -->
+            <section
+                class="relative cyber-border bg-slate-950/40 p-6 flex flex-col h-full justify-between overflow-hidden">
+                <div>
+                    <div class="corner-bracket-tl"></div>
+                    <div class="corner-bracket-br"></div>
+
+                    <h2
+                        class="font-display font-bold text-white text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#00FBFB] text-lg">vpn_key</span>
+                        3. ZK Residency Proof Issuer
+                    </h2>
+
+                    <p class="text-xs text-slate-400 mb-6 font-mono leading-relaxed">
+                        Request a time-locked **Zero-Knowledge proof residency token**. This credential proves you
+                        belong inside a specific municipal grid zone without exposing your persistent citizen identifier
+                        hash.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">CITIZEN
+                                PERSISTENT ID HASH</label>
+                            <input type="text" id="pp-citizen-hash" value="0x7a8efd3e218b9c4f1e8a"
+                                class="w-full bg-black/80 border border-white/10 text-white font-mono text-xs p-1.5 focus:border-[#00FBFB] outline-none">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">TARGET GEOGRAPHIC
+                                ZONE</label>
+                            <select id="pp-zone-select"
+                                class="w-full bg-zinc-900 border border-white/10 text-white font-mono text-xs p-1.5 focus:border-[#00FBFB] outline-none">
+                                <option value="ZONE_A_CENTRAL">ZONE_A_CENTRAL (Sindhi Camp)</option>
+                                <option value="ZONE_B_GRID">ZONE_B_GRID (MI Road Market)</option>
+                                <option value="ZONE_C_METRO">ZONE_C_METRO (Hawa Mahal)</option>
+                                <option value="ZONE_D_OUTPOST">ZONE_D_OUTPOST (JLN Overpass)</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-mono text-outline uppercase font-bold">CREDENTIAL
+                                VALIDITY DURATION</label>
+                            <select id="pp-duration"
+                                class="w-full bg-zinc-900 border border-white/10 text-white font-mono text-xs p-1.5 focus:border-[#00FBFB] outline-none">
+                                <option value="300">5 Minutes (Hackathon Speed)</option>
+                                <option value="1800">30 Minutes</option>
+                                <option value="3600">60 Minutes (Nominal)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    <button onclick="requestPhantomPassProof()"
+                        class="w-full bg-[#00FBFB] text-[#050505] shadow-[0_0_15px_#00FBFB] hover:bg-[#00FBFB]/80 py-2.5 text-xs font-bold uppercase tracking-widest transition-all rounded-[2px]">
+                        GENERATE ZK-RESIDENCY PROOF
+                    </button>
+
+                    <!-- Output Proof Credentials -->
+                    <div id="pp-credential-box"
+                        class="hidden p-3 bg-black/85 border border-[#00fbfb]/30 font-mono text-[9px] text-[#00FBFB] space-y-1">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-5xl text-center border-t border-white/5 pt-4 mt-6 text-[9px] font-mono text-outline">
+        AEGIS Dynamic Governance Consent Engine v2.5 // Designed by Member 1 for Hackathon Integrated Demo.
+    </footer>
+
+    <!-- Interactive Backend Glue Logic -->
+    <script>
+        const API_URL = ""; // Empty string allows relative fetching, working seamlessly on dynamic ports!
+
+        // 1. Dynamic Geolocation Consent toggle
+        async function handleConsentToggle() {
+            const toggle = document.getElementById('consent-toggle');
+            const citizenSelect = document.getElementById('citizen-id-select');
+            const statusTxt = document.getElementById('consent-state-txt');
+            const logContainer = document.getElementById('consent-log-container');
+
+            const citizenId = citizenSelect.value;
+            const consented = toggle.checked;
+
+            statusTxt.innerText = consented ? "CONSENT: ACTIVE" : "CONSENT: REVOKED";
+            statusTxt.className = consented ? "text-xs font-mono font-bold text-green-400 block" : "text-xs font-mono font-bold text-red-500 animate-pulse block";
+
+            try {
+                const response = await fetch(`${API_URL}/api/consent/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ citizen_id: citizenId, consented: consented })
+                });
+
+                const data = await response.json();
+
+                if (consented) {
+                    logContainer.className = "mt-4 p-3 font-mono text-[9px] bg-green-500/10 border border-green-500/20 text-green-400 rounded";
+                    logContainer.innerHTML = `[CONSENT_ACTIVATED] Dynamic opt-in confirmed for <b>${citizenId}</b>. Walkout cooldown buffer cleared. Your face is now unblurred in designated zones.`;
+                } else {
+                    logContainer.className = "mt-4 p-3 font-mono text-[9px] bg-red-500/10 border border-red-500/20 text-red-400 rounded animate-pulse";
+                    logContainer.innerHTML = `[CONSENT_REVOKED]Dynamic opt-out triggered for <b>${citizenId}</b>. Walkout buffer activated! Bounding face boxes will immediately initiate Gaussian blur pixelation on the Dashboard feed.`;
+                }
+            } catch (err) {
+                console.error("Failed to toggle consent:", err);
+                logContainer.className = "mt-4 p-3 font-mono text-[9px] bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded";
+                logContainer.innerText = `[OFFLINE_WARNING] Dynamic consent state changed locally, but connection to core AEGIS server (Port 5000) is currently offline.`;
+            }
+        }
+
+        // 2. Request PhantomPass Zero-Knowledge Proof
+        async function requestPhantomPassProof() {
+            const citizenHash = document.getElementById('pp-citizen-hash').value;
+            const zoneId = document.getElementById('pp-zone-select').value;
+            const duration = parseInt(document.getElementById('pp-duration').value);
+            const credentialBox = document.getElementById('pp-credential-box');
+
+            if (!citizenHash) {
+                alert("Please enter a valid Citizen Persistent ID Hash.");
+                return;
+            }
+
+            credentialBox.classList.remove('hidden');
+            credentialBox.className = "p-3 bg-black/85 border border-yellow-500/30 font-mono text-[9px] text-yellow-500 space-y-1 animate-pulse";
+            credentialBox.innerText = "⏳ Generating proof parameters using local crypto nullifiers...";
+
+            try {
+                const response = await fetch(`${API_URL}/api/phantompass/issue`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ citizen_id_hash: citizenHash, zone_id: zoneId, duration_seconds: duration })
+                });
+
+                const data = await response.json();
+
+                credentialBox.className = "p-3 bg-black/85 border border-[#00fbfb]/30 font-mono text-[9px] text-[#00FBFB] space-y-1";
+                credentialBox.innerHTML = `
+                    <div class="font-bold text-white">[ZK_PROOF_ISSUED]</div>
+                    <div><b>PROOF:</b> ${data.proof_credential}</div>
+                    <div><b>NULLIFIER:</b> ${data.nullifier_hash}</div>
+                    <div class="text-zinc-400"><b>EXPIRES AT:</b> ${new Date(data.expires_at).toLocaleTimeString()}</div>
+                `;
+            } catch (err) {
+                console.error("Failed to request PhantomPass Proof:", err);
+                credentialBox.className = "p-3 bg-black/85 border border-red-500/30 font-mono text-[9px] text-red-500 space-y-1";
+                credentialBox.innerText = `⚠️ Connection Error: Failed to issue cryptographic residency token. Ensure Backend API Server is running on Port 5000.`;
+            }
+        }
+
+        // 3. Submit Emergency CivicVault Report
+        async function submitCivicVaultReport() {
+            const payload = document.getElementById('vault-payload').value;
+            const resultBox = document.getElementById('vault-result-box');
+
+            if (!payload) {
+                alert("Please describe the emergency violation before submitting.");
+                return;
+            }
+
+            resultBox.classList.remove('hidden');
+            resultBox.className = "mt-4 p-3 bg-black/60 border border-yellow-500/20 font-mono text-[9px] text-yellow-500 animate-pulse";
+            resultBox.innerText = "⏳ Splitting symmetric key into 5 Shamir shares across designated co-signers...";
+
+            try {
+                const response = await fetch(`${API_URL}/api/civicvault/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ encrypted_payload: payload, required_signatures: 3, total_jury_pool: 5 })
+                });
+
+                const data = await response.json();
+
+                resultBox.className = "mt-4 p-3 bg-black/60 border border-green-500/20 font-mono text-[9px] text-green-400 space-y-1.5";
+
+                let sharesHtml = "";
+                data.jury_shares_created.forEach(s => {
+                    sharesHtml += `<div class="text-[8px] text-[#00fbfb]/60 pl-2">→ ${s.jury_id}: ${s.secret_share.substring(0, 30)}...</div>`;
+                });
+
+                resultBox.innerHTML = `
+                    <div class="font-bold text-white">[CIVICVAULT_QUEUED] Report successfully locked.</div>
+                    <div><b>RECORD ID:</b> ${data.message_id}</div>
+                    <div><b>STATUS:</b> <span class="px-1.5 bg-yellow-500/20 text-yellow-500 font-bold border border-yellow-500/30 rounded text-[8px] animate-pulse">${data.status}</span></div>
+                    <div class="mt-1 font-bold text-white uppercase text-[8px]">SSS Key Shares Created (3-of-5 jury pool):</div>
+                    ${sharesHtml}
+                `;
+            } catch (err) {
+                console.error("Failed to submit CivicVault report:", err);
+                resultBox.className = "mt-4 p-3 bg-black/60 border border-red-500/20 font-mono text-[9px] text-red-500";
+                resultBox.innerText = `⚠️ Connection Error: Failed to queue report. Ensure Core API server (Port 5000) is online.`;
+            }
+        }
+    </script>
+</body>
+
+</html>

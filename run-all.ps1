@@ -10,13 +10,13 @@ Write-Host "Launching both micro-environments..." -ForegroundColor Yellow
 Write-Host ""
 
 # 1. Start Express Backend & Hosted UI (Member 3 & Member 1 / 4)
-Write-Host "[1/2] Spawning Express Backend + UI Server..." -ForegroundColor DarkYellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Setting up Backend & Static UI Server (Port 5000)...' -ForegroundColor Cyan; cd backend; npm install; npm start" -WindowStyle Normal
+Write-Host "[1/2] Spawning Express Backend and UI Server..." -ForegroundColor DarkYellow
+Start-Process powershell -ArgumentList "-NoExit -Command ""Write-Host 'Setting up Backend and Static UI Server (Port 5000)...' -ForegroundColor Cyan; cd backend; npm install; npm start"""
 Write-Host "[✓] Backend Service initialized." -ForegroundColor Green
 
 # 2. Start AI Service (Member 2)
-Write-Host "[2/2] Spawning AI & ML FastAPI Service..." -ForegroundColor DarkYellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Setting up AI FastAPI Service (Port 8000)...' -ForegroundColor Cyan; cd ai-service; pip install -r requirements.txt; python main.py" -WindowStyle Normal
+Write-Host "[2/2] Spawning AI and ML FastAPI Service..." -ForegroundColor DarkYellow
+Start-Process powershell -ArgumentList "-NoExit -Command ""Write-Host 'Setting up AI FastAPI Service (Port 8000)...' -ForegroundColor Cyan; cd ai-service; pip install -r requirements.txt; python main.py"""
 Write-Host "[✓] AI FastAPI Service initialized." -ForegroundColor Green
 
 Write-Host ""

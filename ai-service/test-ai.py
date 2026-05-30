@@ -29,7 +29,7 @@ def make_post_request(path, payload):
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read().decode('utf-8'))
     except Exception as e:
-        print(f"❌ Connection error: Is FastAPI running on port 8000? Details: {e}")
+        print(f"[FAIL] Connection error: Is FastAPI running on port 8000? Details: {e}")
         return 0, None
 
 def run_suite():
@@ -39,24 +39,24 @@ def run_suite():
     # -------------------------------------------------------------
     # Test 1: Health Check / Home Route
     # -------------------------------------------------------------
-    print("⏳ Test 1: Verifying AI service base health check...")
+    print("[WAIT] Test 1: Verifying AI service base health check...")
     try:
         with urllib.request.urlopen(f"{BASE_URL}/", timeout=2) as response:
             res_data = json.loads(response.read().decode('utf-8'))
             if response.status == 200 and res_data.get("status") == "active":
                 print("   AI Service Status: Active & Operational")
-                print("✅ Test 1 Passed\n")
+                print("[OK] Test 1 Passed\n")
                 success += 1
             else:
                 raise ValueError("Payload mismatch")
     except Exception as e:
-        print(f"❌ Test 1 Failed: {e}\n")
+        print(f"[FAIL] Test 1 Failed: {e}\n")
         failed += 1
 
     # -------------------------------------------------------------
     # Test 2: Unbiased Demographics Prediction (Should NOT suppress alert)
     # -------------------------------------------------------------
-    print("⏳ Test 2: Evaluating Unbiased Demographic Crime Forecast...")
+    print("[WAIT] Test 2: Evaluating Unbiased Demographic Crime Forecast...")
     unbiased_payload = {
         "latitude": 13.7563,
         "longitude": 100.5018,
@@ -79,19 +79,19 @@ def run_suite():
         print(f"   Adjusted Priority: {priority}")
 
         if fairness >= 75 and not suppressed and priority == "HIGH":
-            print("✅ Test 2 Passed\n")
+            print("[OK] Test 2 Passed\n")
             success += 1
         else:
-            print("❌ Test 2 Failed: Output did not match unbiased expectations\n")
+            print("[FAIL] Test 2 Failed: Output did not match unbiased expectations\n")
             failed += 1
     else:
-        print(f"❌ Test 2 Failed: HTTP Status {status}\n")
+        print(f"[FAIL] Test 2 Failed: HTTP Status {status}\n")
         failed += 1
 
     # -------------------------------------------------------------
     # Test 3: Biased Demographics Prediction (Should TRIGGER suppression)
     # -------------------------------------------------------------
-    print("⏳ Test 3: Evaluating Biased Demographic Profile (Auditor test)...")
+    print("[WAIT] Test 3: Evaluating Biased Demographic Profile (Auditor test)...")
     biased_payload = {
         "latitude": 13.7563,
         "longitude": 100.5018,
@@ -114,19 +114,19 @@ def run_suite():
         print(f"   Adjusted Priority: {priority}")
 
         if fairness < 65 and suppressed and priority == "LOW":
-            print("✅ Test 3 Passed\n")
+            print("[OK] Test 3 Passed\n")
             success += 1
         else:
-            print("❌ Test 3 Failed: Output did not match auditor expectations\n")
+            print("[FAIL] Test 3 Failed: Output did not match auditor expectations\n")
             failed += 1
     else:
-        print(f"❌ Test 3 Failed: HTTP Status {status}\n")
+        print(f"[FAIL] Test 3 Failed: HTTP Status {status}\n")
         failed += 1
 
     # -------------------------------------------------------------
     # Test 4: ConsentCam Active Token Classify (Consented Case)
     # -------------------------------------------------------------
-    print("⏳ Test 4: Testing ConsentCam Token Classification (Consented Token)...")
+    print("[WAIT] Test 4: Testing ConsentCam Token Classification (Consented Token)...")
     token_valid_payload = {
         "camera_id": "CAM_01",
         "detected_token_payload": "valid_consent_token_991"
@@ -137,19 +137,19 @@ def run_suite():
         is_consented = response.get("is_valid_consent", False)
         print(f"   Token Validated: {is_consented}")
         if is_consented:
-            print("✅ Test 4 Passed\n")
+            print("[OK] Test 4 Passed\n")
             success += 1
         else:
-            print("❌ Test 4 Failed: Token marked as invalid incorrectly\n")
+            print("[FAIL] Test 4 Failed: Token marked as invalid incorrectly\n")
             failed += 1
     else:
-        print(f"❌ Test 4 Failed: HTTP Status {status}\n")
+        print(f"[FAIL] Test 4 Failed: HTTP Status {status}\n")
         failed += 1
 
     # -------------------------------------------------------------
     # Test 5: ConsentCam Revoked Token Classify (Revoked Case)
     # -------------------------------------------------------------
-    print("⏳ Test 5: Testing ConsentCam Token Classification (Revoked Token)...")
+    print("[WAIT] Test 5: Testing ConsentCam Token Classification (Revoked Token)...")
     token_revoked_payload = {
         "camera_id": "CAM_01",
         "detected_token_payload": "revoked_consent_token_walkout"
@@ -160,13 +160,13 @@ def run_suite():
         is_consented = response.get("is_valid_consent", True)
         print(f"   Token Validated: {is_consented}")
         if not is_consented:
-            print("✅ Test 5 Passed\n")
+            print("[OK] Test 5 Passed\n")
             success += 1
         else:
-            print("❌ Test 5 Failed: Token marked as valid incorrectly\n")
+            print("[FAIL] Test 5 Failed: Token marked as valid incorrectly\n")
             failed += 1
     else:
-        print(f"❌ Test 5 Failed: HTTP Status {status}\n")
+        print(f"[FAIL] Test 5 Failed: HTTP Status {status}\n")
         failed += 1
 
     print("====================================================")
