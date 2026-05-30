@@ -4,6 +4,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
 import requests
+import os
+import pickle
+
+# ── Load Serialized AI Model pkl ──────────────────────────────────
+model = None
+model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+if os.path.exists(model_path):
+    try:
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+        print("[AI Service] [OK] Serialized model.pkl loaded successfully.")
+    except Exception as e:
+        print(f"[AI Service] [WARNING] Failed to load serialized model.pkl: {e}")
 
 app = FastAPI(
     title="AEGIS Ethical AI Service",
@@ -62,15 +75,42 @@ def home():
 @app.post("/api/ai/predict")
 def predict_and_audit(request: PredictRequest, background_tasks: BackgroundTasks):
     try:
-        # Simulate simple mathematical prediction inference
+        # Get demographic inputs
+        income = request.demographic_profile.get("income_level", "medium").lower()
+        race = request.demographic_profile.get("predominant_race", "majority").lower()
+
+        # Fallback default values
         confidence = round(0.5 + random.random() * 0.45, 2)
+        income_val = 1 # medium
+        race_val = 1 # majority
+        category_val = 0 # theft
+
+        if model is not None:
+            try:
+                # Map strings using mappings from model.pkl
+                category_map = model.get("category_map", {})
+                income_map = model.get("income_map", {})
+                race_map = model.get("race_map", {})
+
+                category_val = category_map.get(request.historical_category.lower(), 0)
+                income_val = income_map.get(income, 1)
+                race_val = race_map.get(race, 1)
+
+                # Format feature vector
+                features = [[request.latitude, request.longitude, category_val, income_val, race_val]]
+                
+                # Perform model inference
+                clf = model["classifier"]
+                prob = clf.predict_proba(features)[0][1]
+                confidence = round(float(prob), 2)
+                print(f"[AI Service] Real model prediction made: {confidence}")
+            except Exception as ex:
+                print(f"[AI Service Warning] Inference failed, falling back to mock: {ex}")
+
         alert = f"Predicted elevated {request.historical_category.upper()} alert near grid coordinates."
         
         # Calculate dynamic "bias metrics" representing a SHAP calculation:
         # If income is low or demographic profile is flagged, increase bias score
-        income = request.demographic_profile.get("income_level", "medium").lower()
-        race = request.demographic_profile.get("predominant_race", "majority").lower()
-        
         income_disparity = 0.15
         demographic_parity = 0.10
         

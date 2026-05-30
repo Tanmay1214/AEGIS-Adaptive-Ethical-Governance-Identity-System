@@ -417,7 +417,7 @@ window.resetSystemDemo = async () => {
     }
 };
 
-window.startCitizenDecryptionSimulation = () => {
+window.startCitizenDecryptionSimulation = async () => {
     const logEl = document.getElementById('decryption-console-logs');
     const citizen3 = document.getElementById('jury-citizen-3');
     const progressBar = document.getElementById('jury-progress-bar');
@@ -426,45 +426,104 @@ window.startCitizenDecryptionSimulation = () => {
 
     if (!logEl || !citizen3) return;
 
-    logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Initiating emergency decryption validation...</div>`;
-    logEl.innerHTML += `<div class="text-white mt-1">[JURY] Requesting digital signature from Citizen 3...</div>`;
+    logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Fetching latest CivicVault emergency record...</div>`;
     logEl.scrollTop = logEl.scrollHeight;
 
-    // Simulate Citizen 3 signing after 1.5s
-    setTimeout(() => {
-        citizen3.className = "border border-green-500 bg-green-500/10 p-4 text-center rounded flex flex-col items-center shadow-[0_0_10px_rgba(34,197,94,0.3)] animate-none";
-        citizen3.innerHTML = `
-            <span class="material-symbols-outlined text-green-400 text-3xl mb-1">lock_open</span>
-            <span class="text-[10px] text-green-400 font-bold">CITIZEN_3</span>
-            <span class="text-[8px] text-outline mt-1 font-bold">SIGNED</span>
-            <span class="text-[7px] text-green-400/80 truncate w-full mt-1">0x892a...</span>
-        `;
-        if (progressBar) progressBar.style.width = "60%";
-        if (progressText) {
-            progressText.innerText = "3 OF 5 SIGNED (MINIMUM MET)";
-            progressText.className = "text-green-400 animate-pulse";
+    try {
+        const response = await fetch(`${DASH_API_URL}/civicvault/latest`);
+        const message = await response.json();
+
+        if (!message || !message.message_id) {
+            logEl.innerHTML += `<div class="text-red-500 font-bold mt-1">⚠️ [ERROR] No emergency reports found in queue.</div>`;
+            logEl.innerHTML += `<div class="text-yellow-500 mt-1">→ Please submit an encrypted report on the Citizen Portal first!</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            alert("NO ACTIVE CIVICVAULT REPORTS FOUND!\nPlease go to the Citizen Portal, describe a violation, and click 'FILE CRYPTOGRAPHIC REPORT' first.");
+            return;
         }
 
-        logEl.innerHTML += `<div class="text-green-400 font-bold mt-1">[JURY] Citizen 3 signature verified (0x892a...).</div>`;
-        logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Minimum of 3/5 signatures met. Compiling decryption keys...</div>`;
+        const messageId = message.message_id;
+
+        // Reset progress bar & juror tags to simulate signing
+        if (progressBar) progressBar.style.width = "40%";
+        if (progressText) {
+            progressText.innerText = "2 OF 5 SIGNED (AWAITING CONSENSUS)";
+            progressText.className = "text-yellow-500";
+        }
+        citizen3.className = "border border-[#00fbfb]/30 bg-[#070707] p-4 text-center rounded flex flex-col items-center shadow-none animate-pulse";
+        citizen3.innerHTML = `
+            <span class="material-symbols-outlined text-[#00fbfb]/60 text-3xl mb-1">lock</span>
+            <span class="text-[10px] text-[#00fbfb]/80 font-bold">CITIZEN_3</span>
+            <span class="text-[8px] text-outline mt-1 font-bold">PENDING</span>
+        `;
+
+        logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Report found: ${messageId}. Initiating consensus unlock...</div>`;
+        logEl.innerHTML += `<div class="text-white mt-1">[JURY] Requesting digital signature from Citizen 3...</div>`;
         logEl.scrollTop = logEl.scrollHeight;
 
-        // Decrypt payload after another 1.5s
-        setTimeout(() => {
-            if (payloadBox) {
-                payloadBox.className = "text-[10px] text-green-400 font-bold break-all leading-tight max-w-[90%] animate-pulse";
-                payloadBox.innerText = `DECRYPTED PAYLOAD:
-[SYS_ALERT_ZONE_B_OVERRIDE_CONFIRMED]
-OPERATOR AUTHORITY: OP_01
-DECRYPTION SECTOR: ZONE_B_GRID
-JURY VERIFICATION BLOCK: #7821-AF
-PAYLOAD: "Opt-out telemetry override confirmed by consensus."`;
+        // Call sign endpoint for Juror 1 & Juror 2 first to ensure SSS key is stored
+        await fetch(`${DASH_API_URL}/civicvault/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_1', secret_share: 'share_01' })
+        });
+        await fetch(`${DASH_API_URL}/civicvault/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_2', secret_share: 'share_02' })
+        });
+
+        // Simulate Citizen 3 signing after 1.5s
+        setTimeout(async () => {
+            try {
+                // Submit the final unlocking signature
+                const signRes = await fetch(`${DASH_API_URL}/civicvault/sign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_3', secret_share: 'share_03' })
+                });
+                const signData = await signRes.json();
+
+                citizen3.className = "border border-green-500 bg-green-500/10 p-4 text-center rounded flex flex-col items-center shadow-[0_0_10px_rgba(34,197,94,0.3)] animate-none";
+                citizen3.innerHTML = `
+                    <span class="material-symbols-outlined text-green-400 text-3xl mb-1">lock_open</span>
+                    <span class="text-[10px] text-green-400 font-bold">CITIZEN_3</span>
+                    <span class="text-[8px] text-outline mt-1 font-bold">SIGNED</span>
+                    <span class="text-[7px] text-green-400/80 truncate w-full mt-1">0x892a...</span>
+                `;
+                if (progressBar) progressBar.style.width = "60%";
+                if (progressText) {
+                    progressText.innerText = "3 OF 5 SIGNED (CONSENSUS UNLOCKED)";
+                    progressText.className = "text-green-400 animate-pulse";
+                }
+
+                logEl.innerHTML += `<div class="text-green-400 font-bold mt-1">[JURY] Citizen 3 signature verified (0x892a...).</div>`;
+                logEl.innerHTML += `<div class="text-[#00FBFB] mt-1">[SYS] Minimum of 3/5 signatures met. Compiling Shamir secret shares...</div>`;
+                logEl.scrollTop = logEl.scrollHeight;
+
+                // Reconstruct and decrypt payload after another 1.5s
+                setTimeout(() => {
+                    if (payloadBox) {
+                        payloadBox.className = "text-[10px] text-green-400 font-bold break-all leading-tight max-w-[90%] animate-pulse";
+                        payloadBox.innerText = `DECRYPTED PAYLOAD:
+[RECORD ID: ${messageId}]
+STATUS: ${signData.status}
+JURY VERIFICATION BLOCK: #99A1-${Math.floor(100+Math.random()*900)}
+${signData.decrypted_content}`;
+                    }
+                    logEl.innerHTML += `<div class="text-green-400 font-bold mt-1">[SYS] DECRYPTION SUCCESSFUL. Key reconstructed conceptually!</div>`;
+                    logEl.scrollTop = logEl.scrollHeight;
+                }, 1500);
+
+            } catch (err) {
+                console.error("Failed to sign report:", err);
             }
-            logEl.innerHTML += `<div class="text-green-400 font-bold mt-1">[SYS] DECRYPTION SUCCESSFUL. Payload decrypted live.</div>`;
-            logEl.scrollTop = logEl.scrollHeight;
         }, 1500);
 
-    }, 1500);
+    } catch (err) {
+        console.error("Failed to fetch latest CivicVault message:", err);
+        logEl.innerHTML += `<div class="text-red-500 font-bold mt-1">⚠️ [ERROR] Connection failed.</div>`;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
 };
 
 // ── Live PhantomPass Geotracking Opt-Out Consent Simulator ──────

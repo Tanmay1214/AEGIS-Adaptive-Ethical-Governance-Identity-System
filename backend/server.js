@@ -180,7 +180,7 @@ app.post('/api/civicvault/submit', (req, res) => {
   db.civicVaultMessages[messageId] = {
     message_id: messageId,
     encrypted_payload,
-    decrypted_content: "EMERGENCY ALERT: Active thermal mapping and profiling detected without consent tags in Sector 4 Grid.",
+    decrypted_content: `EMERGENCY ALERT: "${encrypted_payload}"`,
     required_signatures,
     collected_shares: {},
     signatures: [],
@@ -240,6 +240,15 @@ app.post('/api/civicvault/sign', (req, res) => {
     status: message.status,
     decrypted_content: message.status === 'UNLOCKED' ? message.decrypted_content : null
   });
+});
+
+app.get('/api/civicvault/latest', (req, res) => {
+  const keys = Object.keys(db.civicVaultMessages);
+  if (keys.length === 0) {
+    return res.json({ message_id: null });
+  }
+  const latestKey = keys[keys.length - 1];
+  res.json(db.civicVaultMessages[latestKey]);
 });
 
 app.post('/api/ai/report-suppression', (req, res) => {
