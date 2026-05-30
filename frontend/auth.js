@@ -5,13 +5,9 @@
  */
 
 // ── API URL Detection ──────────────────────────────────────────
-const API_URL = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname === ''
-)
+const API_URL = (window.location.protocol === 'file:' || window.location.hostname === '')
   ? 'http://localhost:5000'
-  : window.location.origin; // Dynamically uses same origin when deployed on Railway/Vercel
+  : window.location.origin;
 
 // ── Token Helpers ──────────────────────────────────────────────
 
