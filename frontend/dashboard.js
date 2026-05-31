@@ -363,23 +363,13 @@ function initDashboard() {
         if (mouseSector) mouseSector.innerText = "SECTOR_ALPHA_01";
     }
 
-    // ── Live Webcam Capture Pipeline ──────────────────────────────────
+    // ── Live Webcam Capture Pipeline (Disabled by Operator Request to bypass browser permission prompts) ──
     const webcamEl = document.getElementById('camera-feed-webcam');
     const mockImgEl = document.getElementById('camera-feed-mock');
 
-    if (webcamEl && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        console.log("[AEGIS] Requesting user webcam permission...");
-        navigator.mediaDevices.getUserMedia({ video: { width: 500, height: 375 } })
-            .then(stream => {
-                webcamEl.srcObject = stream;
-                webcamEl.classList.remove('hidden');
-                if (mockImgEl) mockImgEl.classList.add('hidden');
-                console.log("[AEGIS] Webcam stream loaded successfully.");
-            })
-            .catch(err => {
-                console.warn("[AEGIS] Webcam access blocked or unavailable. Using Unsplash stream loop:", err);
-            });
-    }
+    console.log("[AEGIS] Live webcam capture request bypassed to avoid browser permissions prompts. Operating on simulated feed.");
+    if (webcamEl) webcamEl.classList.add('hidden');
+    if (mockImgEl) mockImgEl.classList.remove('hidden');
 }
 
 if (document.readyState === 'loading') {
