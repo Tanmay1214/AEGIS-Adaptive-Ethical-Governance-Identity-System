@@ -38,9 +38,9 @@
             prompt: "ACTION: Review the monorepo grid panel layout, showing the active Leaflet Map and live camera nodes. Click [NEXT STEP] to demonstrate ConsentCam."
         },
         {
-            title: "1. CONSENTCAM :: EDGE VISUAL SHIELDS & SYSTEM BLACKOUT",
-            text: "ConsentCam replaces centralized biometric registries with active citizen-controlled visual shields. On the Citizen Portal (left), select a token and toggle Geolocation Consent OFF. The system initiates a 3.0-second walkout countdown buffer. Once it hits zero, the Operator Dashboard (right) blurs the node's visual stream. The system-wide Privacy Trust Score dial dynamically drops. If the Trust Score drops below 50, a full systemic blackout is triggered, automatically applying heavy visual blurs across all active camera feeds.",
-            prompt: "ACTION: Toggle Geolocation Consent ON & OFF on the Citizen Portal. Watch the live dashboard feeds blur and the Trust Score dial dynamically thump!"
+            title: "1. CONSENTCAM :: PRIVACY-BY-DEFAULT BLURRING & AUTHORIZED UNBLURRING",
+            text: "Because AEGIS operates without any invasive identity-matching registry, every citizen's face is blurred initially by default (Privacy-by-Default). If official orders arrive from authorities to investigate a suspicious individual, the operator can selectively lift/revoke the blur on a live camera stream on the Operator Dashboard. This temporary visual bypass is fully-audited, logged in real-time, and dynamically reflected in the Privacy Trust Score dial.",
+            prompt: "ACTION: Point to the blurred face overlays on the active camera feeds. Show how authorized unblur requests are logged and monitored on the Operator Dashboard."
         },
         {
             title: "2. PHANTOMPASS :: ZERO-KNOWLEDGE RESIDENCY PROOFS",
@@ -50,12 +50,17 @@
         {
             title: "3. CIVICVAULT :: 3-OF-5 SECRET SHARING CONSENSUS",
             text: "CivicVault secures sensitive incident reports behind cryptographic consensus. When a citizen submits a report on the Citizen Portal (left), the core Express backend splits the symmetric AES-like key into five unique coordinate shares using Shamir's Secret Sharing (SSS). On the Operator Dashboard, the report arrives in a LOCKED state. Click 'INITIATE DECRYPTION' to simulate citizen jurors co-signing. Only when a 3-of-5 signature threshold is gathered does the backend execute Lagrange finite-field polynomial interpolation to reconstruct the key and decrypt the payload.",
-            prompt: "ACTION: File a report on the Citizen Portal, click 'INITIATE DECRYPTION' on the dashboard, and watch the juror badges transition to co-sign."
+            prompt: "ACTION: File a report on the Citizen Portal, click 'INITIATE DECRYPTION' on the dashboard, and watch the green juror consensus co-sign live."
         },
         {
             title: "4. FAIRWATCH AI :: BIAS FORECAST SUPPRESSION & SHAP AUDITING",
             text: "FairWatch AI mitigates predictive redlining and discriminatory policing. When an operator runs a crime forecast, FastAPI runs the query against a trained Scikit-Learn Decision Tree classifier. It dynamically calculates SHAP demographic parity bias and income disparity weights. Running an unbiased majority profile displays a green PASSED audit badge. If parameters are shifted to a protected demographic (low-income/minority) on the Citizen Portal, the Fairness Score collapses below 65%, triggering automated suppression to block resource allocation.",
             prompt: "ACTION: Run an unbiased forecast (Passed), then run a low-income forecast on the Citizen Portal to witness the real-time AI suppression warning."
+        },
+        {
+            title: "5. DEMO SPIKE :: CRITICAL THREAT & SYSTEMIC BLACKOUT",
+            text: "We can simulate a critical privacy breach or bias attack. Click 'TRIGGER DEMO SPIKE (CRITICAL SHUTDOWN)' on the Operator Dashboard. The composite Privacy Trust Score instantly collapses below 50. In response, the system dynamically locks all video streams, applying heavy Gaussian visual blurs across all active camera feeds and initiating an emergency facial recognition blackout to protect public citizen anonymity.",
+            prompt: "ACTION: Click the 'TRIGGER DEMO SPIKE (CRITICAL SHUTDOWN)' button on the right panel of the dashboard. Observe the complete systemic blackout response."
         },
         {
             title: "INTEGRATED DEMO COMPLETE :: PRIVACY BY DESIGN",
@@ -69,7 +74,6 @@
     // 3. Create the caption box DOM elements with strict word wrapping and larger fonts
     const captionContainer = document.createElement('div');
     captionContainer.id = "aegis-demo-helper";
-    // Using a vertical block layout or structured flex-col instead of inline-flex to guarantee NO horizontal overflow
     captionContainer.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-[99999] w-[95%] max-w-4xl bg-[#070708]/98 border-2 border-[#00FBFB]/40 shadow-[0_0_30px_rgba(0,251,251,0.25)] p-5 rounded-[4px] backdrop-blur-xl flex flex-col gap-4 transition-all duration-300 demo-caption-pulse";
     
     // Text container
@@ -97,7 +101,7 @@
     textSection.appendChild(bodyText);
     textSection.appendChild(promptText);
 
-    // Controls container (places buttons at the bottom of the card on mobile, or in a clean horizontal strip)
+    // Controls container
     const controls = document.createElement('div');
     controls.className = "w-full flex flex-row justify-between items-center gap-3 border-t border-emerald-500/20 pt-3 mt-1";
 
