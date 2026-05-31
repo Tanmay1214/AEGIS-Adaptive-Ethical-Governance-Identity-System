@@ -1,104 +1,88 @@
+const crypto = require('crypto');
+const { generateZkToken, validateZkToken, splitMessageKey, reconstructMessageKey } = require('./engine');
 
-const cryptoEngine = require('./engine');
-const assert = require('assert');
-
-console.log("====================================================");
-console.log("   AEGIS Cryptography & Security Validation Suite");
-console.log("====================================================\n");
-
-let successCount = 0;
-let failCount = 0;
-
-function runTest(testName, testFn) {
-  try {
-    console.log(`⏳ Running: ${testName}...`);
-    testFn();
-    console.log(`✅ Passed: ${testName}\n`);
-    successCount++;
-  } catch (error) {
-    console.error(`❌ Failed: ${testName}`);
-    console.error(error);
-    console.log();
-    failCount++;
+function assert(condition, label) {
+  if (!condition) {
+    console.error('❌ FAILED: ' + label);
+    process.exit(1);
   }
 }
 
-// -------------------------------------------------------------
-// Test Case 1: PhantomPass ZK-Proof Generation & Time-Lock Validation
-// -------------------------------------------------------------
-runTest("PhantomPass ZK-Proof Validity & Expire Checks", () => {
-  const citizenIdHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"; // SHA-256 for empty string
-  const zoneId = "ZONE_A_CENTRAL";
-  const durationSeconds = 2; // 2-second time lock
+async function main() {
+  console.log("====================================================");
+  console.log("AEGIS Cryptography & Security Validation Suite");
+  
+  // PhantomPass Tests
+  console.log("⏳ Running: PhantomPass ZK-Proof Validity & Expire Checks...");
+  
+  const citizenIdHash = crypto.createHash('sha256').update('citizen123').digest('hex');
+  const zoneId = 'ZONE_1';
+  const masterKey = 'master-key';
+  
+  // 1. Valid token
+  const tokenValid = generateZkToken(citizenIdHash, zoneId, 3600, masterKey);
+  const validateResult1 = validateZkToken(tokenValid, citizenIdHash, zoneId, masterKey);
+  assert(validateResult1.valid === true, "Valid token should pass");
+  
+  const shortCred = tokenValid.proof_credential.substring(0, 6);
+  console.log(`Issued Token: zk-proof-resident-valid-${shortCred}...`);
+  console.log(`Expires At: ${tokenValid.expires_at}`);
+  
+  // 2. Expired token
+  const tokenExpired = generateZkToken(citizenIdHash, zoneId, -1, masterKey);
+  const validateResult2 = validateZkToken(tokenExpired, citizenIdHash, zoneId, masterKey);
+  assert(validateResult2.valid === false && validateResult2.reason === 'TOKEN_EXPIRED', "Expired token should fail with TOKEN_EXPIRED");
+  
+  // 3. Tampered credential
+  const tokenTampered = { ...tokenValid };
+  tokenTampered.proof_credential = (tokenTampered.proof_credential[0] === 'a' ? 'b' : 'a') + tokenTampered.proof_credential.substring(1);
+  const validateResult3 = validateZkToken(tokenTampered, citizenIdHash, zoneId, masterKey);
+  assert(validateResult3.valid === false && validateResult3.reason === 'TOKEN_TAMPERED', "Tampered token should fail with TOKEN_TAMPERED");
+  
+  console.log("✅ Passed: PhantomPass ZK-Proof Validity & Expire Checks");
+  
+  // CivicVault Tests
+  console.log("⏳ Running: CivicVault Shamir 3-of-5 Key Split & Reconstruction...");
+  
+  // 4. Full split & reconstruct with 3 shares
+  const originalKey = crypto.randomBytes(32).toString('hex');
+  const shares = splitMessageKey(originalKey);
+  
+  console.log("Successfully split key into 5 shares.");
+  shares.forEach(s => {
+    console.log(`- ${s.jury_id} holds key reference`);
+  });
+  
+  const reconstruct3 = reconstructMessageKey([shares[0], shares[1], shares[2]]);
+  assert(reconstruct3.status === 'UNLOCKED' && reconstruct3.key === originalKey, "Reconstruct with 3 shares should yield original key");
+  console.log("Consensus met: successfully unlocked payload using 3 shares.");
+  
+  // 5. 2 shares blocked
+  const reconstruct2 = reconstructMessageKey([shares[0], shares[1]]);
+  assert(reconstruct2.status === 'LOCKED', "Reconstruct with 2 shares should be LOCKED");
+  console.log("Consensus failed: safely blocked decryption using only 2 shares.");
+  
+  // 6. Tampered share
+  const tamperedShares = [
+    { ...shares[0] },
+    shares[1],
+    shares[2]
+  ];
+  tamperedShares[0].secret_share = (tamperedShares[0].secret_share[0] === 'a' ? 'b' : 'a') + tamperedShares[0].secret_share.substring(1);
+  const reconstructTampered = reconstructMessageKey(tamperedShares);
+  assert(reconstructTampered.status === 'UNLOCKED' && reconstructTampered.key !== originalKey, "Tampered share should not crash, but yield incorrect key");
+  console.log("  ⚠ Security note: tampered share produced wrong key as expected");
+  
+  // 7. Duplicate juror dedup
+  const reconstructDup = reconstructMessageKey([shares[0], shares[0], shares[0]]);
+  assert(reconstructDup.status === 'LOCKED', "Reconstruct with duplicate shares should be LOCKED");
+  
+  console.log("✅ Passed: CivicVault Shamir 3-of-5 Key Split & Reconstruction");
+  console.log("====================================================");
+  console.log("Validation Complete: 2 Passed | 0 Failed");
+}
 
-  // 1. Issue credential
-  const credential = cryptoEngine.generateZkToken(citizenIdHash, zoneId, durationSeconds);
-
-  assert.ok(credential.proof_credential, "Proof token should be generated");
-  assert.ok(credential.nullifier_hash, "Nullifier hash should be generated");
-  assert.ok(credential.expires_at, "Expiration timestamp must exist");
-
-  console.log(`   Issued Token: ${credential.proof_credential}`);
-  console.log(`   Expires At: ${credential.expires_at}`);
-
-  // 2. Validate expiration is in the future
-  const expiresMs = new Date(credential.expires_at).getTime();
-  const nowMs = Date.now();
-  assert.ok(expiresMs > nowMs, "Credential expiration must be in the future when issued");
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
 });
-
-// -------------------------------------------------------------
-// Test Case 2: CivicVault Shamir's Key Splitting & Consensus Reconstruction
-// -------------------------------------------------------------
-runTest("CivicVault Shamir 3-of-5 Key Split & Reconstruction", () => {
-  const secretKey = "super-secret-aes-key-abc-123";
-  const requiredSigs = 3;
-  const totalPool = 5;
-
-  // 1. Split key into 5 shares
-  const shares = cryptoEngine.splitMessageKey(secretKey, requiredSigs, totalPool);
-  assert.strictEqual(shares.length, totalPool, `Should generate exactly ${totalPool} shares`);
-  console.log(`   Successfully split key into ${shares.length} shares.`);
-  shares.forEach(s => console.log(`    - ${s.jury_id} holds key reference`));
-
-  // 2. Simulate 3-of-5 consensus reconstruction (Should PASS)
-  const mockMessageRecord = {
-    required_signatures: requiredSigs,
-    decrypted_content: "CRITICAL: Suspicious scanning arrays detected in Grid Sector C."
-  };
-
-  const collectedShares3 = {
-    "citizen_jury_1": shares[0].secret_share,
-    "citizen_jury_2": shares[1].secret_share,
-    "citizen_jury_3": shares[2].secret_share
-  };
-
-  const recon3 = cryptoEngine.reconstructMessageKey(mockMessageRecord, collectedShares3);
-  assert.strictEqual(recon3.status, "UNLOCKED", "Should successfully unlock with 3 shares");
-  assert.strictEqual(recon3.decrypted_content, mockMessageRecord.decrypted_content, "Decrypted text should match");
-  console.log("   Consensus met: successfully unlocked payload using 3 shares.");
-
-  // 3. Simulate 4-of-5 consensus reconstruction (Should PASS)
-  const collectedShares4 = {
-    "citizen_jury_1": shares[0].secret_share,
-    "citizen_jury_2": shares[1].secret_share,
-    "citizen_jury_3": shares[2].secret_share,
-    "citizen_jury_4": shares[3].secret_share
-  };
-  const recon4 = cryptoEngine.reconstructMessageKey(mockMessageRecord, collectedShares4);
-  assert.strictEqual(recon4.status, "UNLOCKED", "Should successfully unlock with 4 shares");
-
-  // 4. Simulate insufficient consensus (Should FAIL)
-  const collectedShares2 = {
-    "citizen_jury_1": shares[0].secret_share,
-    "citizen_jury_5": shares[4].secret_share
-  };
-  const recon2 = cryptoEngine.reconstructMessageKey(mockMessageRecord, collectedShares2);
-  assert.strictEqual(recon2.status, "LOCKED", "Should remain locked with only 2 shares");
-  assert.strictEqual(recon2.decrypted_content, null, "Decrypted content should be null");
-  console.log("   Consensus failed: safely blocked decryption using only 2 shares.");
-});
-
-console.log("====================================================");
-console.log(`   Validation Complete: ${successCount} Passed | ${failCount} Failed`);
-console.log("====================================================");
