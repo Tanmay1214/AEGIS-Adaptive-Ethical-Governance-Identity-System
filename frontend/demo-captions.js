@@ -1,110 +1,132 @@
 /**
- * AEGIS Live Demo Caption Helper Overlay
+ * AEGIS Live Demo Caption Helper Overlay (Premium High-Contrast Edition)
  * Dynamically overlays an interactive caption bar at the bottom center of the screen
- * for a silent, professional live demonstration with clear typewriter explanations.
+ * with perfect word wrapping, large readable text, and comprehensive feature coverage.
  */
 
 (function () {
-    // 1. Create and inject Tailwind styles and font overrides if needed
+    // 1. Inject styling overrides for perfect word wrapping, layout flow, and glowing effects
     const style = document.createElement('style');
     style.innerHTML = `
         .demo-caption-pulse {
             animation: caption-pulse 2s infinite;
         }
         @keyframes caption-pulse {
-            0%, 100% { opacity: 1; border-color: rgba(16, 185, 129, 0.6); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
-            50% { opacity: 0.9; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 5px rgba(16, 185, 129, 0.1); }
+            0%, 100% { 
+                border-color: rgba(0, 251, 251, 0.6); 
+                box-shadow: 0 0 20px rgba(0, 251, 251, 0.25), inset 0 0 10px rgba(0, 251, 251, 0.05); 
+            }
+            50% { 
+                border-color: rgba(0, 251, 251, 0.3); 
+                box-shadow: 0 0 8px rgba(0, 251, 251, 0.1), inset 0 0 5px rgba(0, 251, 251, 0.02); 
+            }
+        }
+        .caption-text-glow {
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+        }
+        .caption-accent-glow {
+            text-shadow: 0 0 8px rgba(0, 251, 251, 0.4);
         }
     `;
     document.head.appendChild(style);
 
-    // 2. Define the storyboard slides
+    // 2. Comprehensive, ultra-detailed slides covering EVERY feature of Members 1, 2, 3, and 4
     const slides = [
         {
-            title: "AEGIS :: SYSTEM OVERVIEW",
-            text: "Welcome to AEGIS (Adaptive Ethical Governance Identity System). This is the Admin Operator Dashboard. By default, face coordinates across all cameras are heavily blurred at the hardware edge to enforce strict citizen anonymity in public surveillance networks.",
-            prompt: "Action: Point to the live map and camera node grids. Click [NEXT STEP] to demonstrate ConsentCam."
+            title: "AEGIS CORE SYSTEM OVERVIEW",
+            text: "AEGIS (Adaptive Ethical Governance Identity System) is a monorepo full-stack smart city framework. It secures citizen privacy in public spaces using edge-computed computer vision shields, Zero-Knowledge residency tokens, consensus-driven encrypted secret-sharing vaults, and bias-suppressed crime forecasting pipelines. By default, face coordinates across all active cameras are heavily blurred at the hardware edge to enforce strict visual anonymity.",
+            prompt: "ACTION: Review the monorepo grid panel layout, showing the active Leaflet Map and live camera nodes. Click [NEXT STEP] to demonstrate ConsentCam."
         },
         {
-            title: "1. CONSENTCAM :: DYNAMIC VISUAL SHIELDS",
-            text: "ConsentCam allows citizens to control their privacy live. On the Citizen Portal (left screen), toggle Geolocation Consent OFF. The portal initiates a 3.0s grace delay, after which the Operator Dashboard applies full Gaussian blurs and lowers the Privacy Trust Score dial.",
-            prompt: "Action: Try toggling consent ON & OFF on the Citizen Portal. Watch the dashboard react in real-time."
+            title: "1. CONSENTCAM :: EDGE VISUAL SHIELDS & SYSTEM BLACKOUT",
+            text: "ConsentCam replaces centralized biometric registries with active citizen-controlled visual shields. On the Citizen Portal (left), select a token and toggle Geolocation Consent OFF. The system initiates a 3.0-second walkout countdown buffer. Once it hits zero, the Operator Dashboard (right) blurs the node's visual stream. The system-wide Privacy Trust Score dial dynamically drops. If the Trust Score drops below 50, a full systemic blackout is triggered, automatically applying heavy visual blurs across all active camera feeds.",
+            prompt: "ACTION: Toggle Geolocation Consent ON & OFF on the Citizen Portal. Watch the live dashboard feeds blur and the Trust Score dial dynamically thump!"
         },
         {
-            title: "2. PHANTOMPASS :: ZERO-KNOWLEDGE PROOFS",
-            text: "PhantomPass clears camera checkpoints anonymously. On the Citizen Portal (left), click 'GENERATE ZK-RESIDENCY PROOF'. A secure SHA-256 HMAC nullifier (#TKN-XXXX) is issued, and a second-by-second countdown timer ticks down live on the dashboard until it expires.",
-            prompt: "Action: Click 'GENERATE ZK-RESIDENCY PROOF' on the Citizen Portal. Watch the live ticker countdown."
+            title: "2. PHANTOMPASS :: ZERO-KNOWLEDGE RESIDENCY PROOFS",
+            text: "PhantomPass clears local checkpoints anonymously. When a citizen clicks 'GENERATE ZK-RESIDENCY PROOF' on the Citizen Portal (left), the system utilizes SHA-256 HMAC dynamic nullifiers to construct a ZK-Residency Proof token (#TKN-XXXX) for the target zone. The Operator Dashboard instantly registers this proof in the active registry ledger, starting a second-by-second live countdown timer ticker. When the validity period expires, the dashboard dynamically transitions the badge to a red, flashing REVOKED status.",
+            prompt: "ACTION: Click 'GENERATE ZK-RESIDENCY PROOF' on the Citizen Portal. Watch the dashboard populate the ledger and initiate the real-time ticker."
         },
         {
-            title: "3. CIVICVAULT :: SHAMIR'S SECRET SHARING",
-            text: "CivicVault locks reports behind key splits. On the Citizen Portal, write a report and click 'FILE CRYPTOGRAPHIC REPORT'. On the dashboard, click 'INITIATE DECRYPTION'. Five jurors review the alert; only when 3-of-5 co-sign is the Lagrange polynomial solved to decrypt the text.",
-            prompt: "Action: File a report, click 'INITIATE DECRYPTION', and watch the green juror consensus co-sign live."
+            title: "3. CIVICVAULT :: 3-OF-5 SECRET SHARING CONSENSUS",
+            text: "CivicVault secures sensitive incident reports behind cryptographic consensus. When a citizen submits a report on the Citizen Portal (left), the core Express backend splits the symmetric AES-like key into five unique coordinate shares using Shamir's Secret Sharing (SSS). On the Operator Dashboard, the report arrives in a LOCKED state. Click 'INITIATE DECRYPTION' to simulate citizen jurors co-signing. Only when a 3-of-5 signature threshold is gathered does the backend execute Lagrange finite-field polynomial interpolation to reconstruct the key and decrypt the payload.",
+            prompt: "ACTION: File a report on the Citizen Portal, click 'INITIATE DECRYPTION' on the dashboard, and watch the juror badges transition to co-sign."
         },
         {
-            title: "4. FAIRWATCH AI :: BIAS FORECAST SUPPRESSION",
-            text: "FairWatch AI intercepts crime forecasting. Unbiased profiles (high-income/majority) run cleanly. If parameters are changed to a protected class (low-income/minority) on the Citizen Portal, the ML model suppressés it, flashing a red SUPPRESSED badge to prevent profiling.",
-            prompt: "Action: Run both unbiased and low-income forecasts on the Citizen Portal to show real-time audits."
+            title: "4. FAIRWATCH AI :: BIAS FORECAST SUPPRESSION & SHAP AUDITING",
+            text: "FairWatch AI mitigates predictive redlining and discriminatory policing. When an operator runs a crime forecast, FastAPI runs the query against a trained Scikit-Learn Decision Tree classifier. It dynamically calculates SHAP demographic parity bias and income disparity weights. Running an unbiased majority profile displays a green PASSED audit badge. If parameters are shifted to a protected demographic (low-income/minority) on the Citizen Portal, the Fairness Score collapses below 65%, triggering automated suppression to block resource allocation.",
+            prompt: "ACTION: Run an unbiased forecast (Passed), then run a low-income forecast on the Citizen Portal to witness the real-time AI suppression warning."
         },
         {
-            title: "AEGIS :: DEMO COMPLETE",
-            text: "This concludes the silent integrated live demonstration. AEGIS successfully combines edge-computed computer vision shields, threshold cryptosystems, ZK residency assertions, and bias-intercepting ML audits to forge an ethical smart city architecture.",
-            prompt: "Press [RESET] to restart the guided caption flow."
+            title: "INTEGRATED DEMO COMPLETE :: PRIVACY BY DESIGN",
+            text: "This concludes the silent live demonstration of the AEGIS architecture. By combining edge OpenCV/InsightFace face detection grids, multi-party Shamir Secret Sharing, time-locked ZK residency proof assertions, and FastAPI-based bias-suppressed SHAP forecasting models, AEGIS delivers a decentralized, robust, and mathematically sound model for next-generation smart city ethics.",
+            prompt: "ACTION: Click [RESET] to restart the guided, captioned presentation flow."
         }
     ];
 
     let currentSlideIndex = 0;
 
-    // 3. Create the caption box DOM
+    // 3. Create the caption box DOM elements with strict word wrapping and larger fonts
     const captionContainer = document.createElement('div');
     captionContainer.id = "aegis-demo-helper";
-    captionContainer.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-[99999] w-[95%] max-w-3xl bg-black/95 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.35)] text-emerald-400 font-mono text-xs md:text-sm p-4 rounded-[4px] backdrop-blur-lg flex flex-col md:flex-row justify-between items-stretch gap-4 transition-all duration-300 demo-caption-pulse";
+    // Using a vertical block layout or structured flex-col instead of inline-flex to guarantee NO horizontal overflow
+    captionContainer.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-[99999] w-[95%] max-w-4xl bg-[#070708]/98 border-2 border-[#00FBFB]/40 shadow-[0_0_30px_rgba(0,251,251,0.25)] p-5 rounded-[4px] backdrop-blur-xl flex flex-col gap-4 transition-all duration-300 demo-caption-pulse";
     
+    // Text container
     const textSection = document.createElement('div');
-    textSection.className = "flex-grow space-y-1.5 flex flex-col justify-center pr-2";
+    textSection.className = "w-full space-y-3 flex flex-col text-left";
     
     const header = document.createElement('div');
-    header.className = "text-[#00FBFB] font-bold text-[10px] md:text-xs uppercase tracking-wider flex items-center gap-2";
-    header.innerHTML = `<span class="inline-block w-2.5 h-2.5 bg-[#00FBFB] rounded-full animate-ping"></span> <span id="caption-title">AEGIS :: SYSTEM OVERVIEW</span>`;
+    header.className = "text-[#00FBFB] font-bold text-xs md:text-sm uppercase tracking-widest flex items-center gap-2 border-b border-[#00FBFB]/20 pb-2";
+    header.innerHTML = `
+        <span class="inline-block w-2.5 h-2.5 bg-[#00FBFB] rounded-full animate-ping"></span> 
+        <span id="caption-title" class="caption-accent-glow">AEGIS CORE SYSTEM OVERVIEW</span>
+    `;
     
+    // Explicit styling for text wrapping and larger fonts
     const bodyText = document.createElement('p');
     bodyText.id = "caption-body";
-    bodyText.className = "text-slate-100 font-mono text-[11px] md:text-[12.5px] leading-relaxed";
-    bodyText.innerText = "";
+    bodyText.className = "text-slate-100 font-mono text-[13px] md:text-[15px] leading-relaxed font-normal whitespace-normal break-words caption-text-glow";
+    bodyText.style.cssText = "white-space: normal !important; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: normal !important; margin: 0; padding: 0;";
 
     const promptText = document.createElement('div');
     promptText.id = "caption-prompt";
-    promptText.className = "text-yellow-400 text-[10px] md:text-[11px] font-bold uppercase tracking-tight";
-    promptText.innerText = "";
-
+    promptText.className = "text-yellow-400 text-[11px] md:text-[12px] font-bold uppercase tracking-wider bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-[2px]";
+    
     textSection.appendChild(header);
     textSection.appendChild(bodyText);
     textSection.appendChild(promptText);
 
-    // Controls Section
+    // Controls container (places buttons at the bottom of the card on mobile, or in a clean horizontal strip)
     const controls = document.createElement('div');
-    controls.className = "flex md:flex-col justify-between md:justify-center items-center gap-2 border-t md:border-t-0 md:border-l border-emerald-500/20 pt-3 md:pt-0 md:pl-4 min-w-[120px]";
+    controls.className = "w-full flex flex-row justify-between items-center gap-3 border-t border-emerald-500/20 pt-3 mt-1";
+
+    const leftButtons = document.createElement('div');
+    leftButtons.className = "flex gap-2";
 
     const btnPrev = document.createElement('button');
-    btnPrev.className = "px-3 py-1.5 border border-emerald-500/35 hover:bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-[2px] transition-all w-full text-center";
-    btnPrev.innerText = "<< PREV";
+    btnPrev.className = "px-4 py-2 border border-emerald-500/35 hover:bg-emerald-500/10 text-emerald-400 text-[11px] font-bold rounded-[2px] transition-all min-w-[90px] uppercase tracking-wider active:scale-95";
+    btnPrev.innerText = "PREV";
     btnPrev.onclick = () => navigate(-1);
 
-    const btnNext = document.createElement('button');
-    btnNext.className = "px-3 py-1.5 bg-emerald-500 text-black hover:bg-emerald-400 text-[10px] font-black rounded-[2px] transition-all w-full text-center tracking-widest";
-    btnNext.innerText = "NEXT >>";
-    btnNext.onclick = () => navigate(1);
-
     const btnToggle = document.createElement('button');
-    btnToggle.className = "px-2 py-1 text-slate-500 hover:text-slate-300 text-[9px] font-mono transition-all text-center mt-1";
-    btnToggle.innerText = "[HIDE CAPTIONS]";
+    btnToggle.className = "px-3 py-2 text-slate-500 hover:text-slate-300 text-[10px] font-mono transition-all uppercase";
+    btnToggle.innerText = "[HIDE HUD]";
     btnToggle.onclick = () => {
         captionContainer.classList.add('hidden');
         showFloatingButton();
     };
 
+    leftButtons.appendChild(btnPrev);
+    leftButtons.appendChild(btnToggle);
+
+    const btnNext = document.createElement('button');
+    btnNext.className = "px-5 py-2.5 bg-[#00FBFB] text-black hover:bg-[#00fbfb]/80 text-[11px] font-black rounded-[2px] transition-all min-w-[120px] tracking-widest uppercase active:scale-95 shadow-[0_0_15px_rgba(0,251,251,0.3)]";
+    btnNext.innerText = "NEXT STEP";
+    btnNext.onclick = () => navigate(1);
+
+    controls.appendChild(leftButtons);
     controls.appendChild(btnNext);
-    controls.appendChild(btnPrev);
-    controls.appendChild(btnToggle);
 
     captionContainer.appendChild(textSection);
     captionContainer.appendChild(controls);
@@ -113,8 +135,8 @@
     // Floating activation button when hidden
     const floatBtn = document.createElement('button');
     floatBtn.id = "aegis-caption-float";
-    floatBtn.className = "fixed bottom-5 right-5 z-[99999] bg-emerald-600 text-white font-mono text-[10px] font-bold px-3 py-2 border border-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.5)] hover:bg-emerald-500 rounded-[2px] transition-all hidden";
-    floatBtn.innerText = "⚡ AEGIS DEMO CAPTIONS";
+    floatBtn.className = "fixed bottom-5 right-5 z-[99999] bg-emerald-950 text-[#00FBFB] font-mono text-[10px] font-bold px-4 py-2.5 border border-[#00FBFB]/50 shadow-[0_0_20px_rgba(0,251,251,0.4)] hover:bg-[#00FBFB] hover:text-black rounded-[2px] transition-all hidden uppercase tracking-wider";
+    floatBtn.innerText = "⚡ ACTIVATE CAPTION HUD";
     floatBtn.onclick = () => {
         floatBtn.classList.add('hidden');
         captionContainer.classList.remove('hidden');
@@ -125,7 +147,7 @@
         floatBtn.classList.remove('hidden');
     }
 
-    // Typewriter effect variables
+    // Typewriter state tracking
     let typewriterInterval = null;
 
     function navigate(direction) {
@@ -143,11 +165,13 @@
         
         // Disable prev at first slide, change next text at last slide
         btnPrev.disabled = currentSlideIndex === 0;
-        btnPrev.className = currentSlideIndex === 0
-            ? "px-3 py-1.5 border border-zinc-800 text-zinc-600 text-[10px] font-bold rounded-[2px] cursor-not-allowed w-full text-center"
-            : "px-3 py-1.5 border border-emerald-500/35 hover:bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-[2px] transition-all w-full text-center";
+        if (currentSlideIndex === 0) {
+            btnPrev.className = "px-4 py-2 border border-zinc-800 text-zinc-600 text-[11px] font-bold rounded-[2px] cursor-not-allowed min-w-[90px] uppercase tracking-wider";
+        } else {
+            btnPrev.className = "px-4 py-2 border border-[#00FBFB]/30 hover:bg-[#00FBFB]/10 text-[#00FBFB] text-[11px] font-bold rounded-[2px] transition-all min-w-[90px] uppercase tracking-wider active:scale-95";
+        }
         
-        btnNext.innerText = currentSlideIndex === slides.length - 1 ? "RESET" : "NEXT >>";
+        btnNext.innerText = currentSlideIndex === slides.length - 1 ? "RESET SYSTEM" : "NEXT STEP >>";
         if (currentSlideIndex === slides.length - 1) {
             btnNext.onclick = () => {
                 currentSlideIndex = 0;
@@ -158,7 +182,7 @@
             btnNext.onclick = () => navigate(1);
         }
 
-        // Apply typewriter animation to body text
+        // Apply typewriter animation
         typewrite(slide.text);
     }
 
@@ -167,21 +191,17 @@
         bodyText.innerText = "";
         let charIndex = 0;
         
+        // Using substring slice rather than character accumulation to completely prevent dynamic word-breaking or spacing collapse
         typewriterInterval = setInterval(() => {
-            if (charIndex < text.length) {
-                bodyText.innerText += text.charAt(charIndex);
+            if (charIndex <= text.length) {
+                bodyText.textContent = text.slice(0, charIndex);
                 charIndex++;
             } else {
                 clearInterval(typewriterInterval);
             }
-        }, 15); // extremely snappy typewriter effect
+        }, 12); // snapped typewriter speed for smooth, professional visual progression
     }
 
-    // Initialize first slide
+    // Initialize first slide on load
     updateSlide();
-
-    // 4. Listen to standard socket integrations or dashboard state changes to auto-suggest navigation if available!
-    window.addEventListener('message', function(event) {
-        // Listening for messages between tabs if used
-    });
 })();
