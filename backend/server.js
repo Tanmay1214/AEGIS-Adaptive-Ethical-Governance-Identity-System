@@ -66,9 +66,48 @@ const defaultPredictions = [
   }
 ];
 
+const defaultCredentials = [
+  {
+    proof_credential: "zk-proof-resident-valid-4809",
+    citizen_id_hash: "0x8a92f0ab32fe19cd",
+    zone_id: "ZONE_A_CENTRAL",
+    expires_at: new Date(Date.now() + 1000 * 60 * 4.3).toISOString(),
+    active: true,
+    status: "CONSENTED",
+    timestamp: new Date(Date.now() - 3600000).toISOString()
+  },
+  {
+    proof_credential: "zk-proof-resident-valid-1299",
+    citizen_id_hash: "0x9c31faee1029ab88",
+    zone_id: "ZONE_B_GRID",
+    expires_at: new Date(Date.now() + 1000 * 60 * 1.7).toISOString(),
+    active: true,
+    status: "CONSENTED",
+    timestamp: new Date(Date.now() - 3600000 * 0.5).toISOString()
+  },
+  {
+    proof_credential: "zk-proof-resident-valid-9921",
+    citizen_id_hash: "0xdd291a8ffc0199e8",
+    zone_id: "ZONE_B_GRID",
+    expires_at: new Date(Date.now() - 1000).toISOString(),
+    active: false,
+    status: "REVOKED",
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString()
+  },
+  {
+    proof_credential: "zk-proof-resident-valid-7811",
+    citizen_id_hash: "0x2f90ea12b48cd029",
+    zone_id: "ZONE_A_CENTRAL",
+    expires_at: new Date(Date.now() + 1000 * 60 * 13).toISOString(),
+    active: true,
+    status: "CONSENTED",
+    timestamp: new Date(Date.now() - 3600000 * 1.2).toISOString()
+  }
+];
+
 const db = {
   activeConsents: new Set(['citizen_token_1', 'citizen_token_2']),
-  phantomCredentials: [],
+  phantomCredentials: [...defaultCredentials],
   civicVaultMessages: {},
   biasSuppressions: [],
   predictions: [...defaultPredictions],
@@ -198,14 +237,28 @@ app.post('/api/phantompass/issue', (req, res) => {
   // Call Member 4's crypto engine:
   const credential = cryptoEngine.generateZkToken(citizen_id_hash, zone_id, duration_seconds);
 
-  db.phantomCredentials.push({
+  const newCred = {
     ...credential,
+    citizen_id_hash,
     zone_id,
-    active: true
-  });
+    active: true,
+    status: 'CONSENTED',
+    timestamp: new Date().toISOString()
+  };
+
+  db.phantomCredentials.push(newCred);
+
+  // Broadcast so dashboard updates dynamically in real-time
+  io.emit('new-phantompass-credential', newCred);
 
   broadcastAlert('phantompass_issued', `ZK residency credential issued for ${zone_id} (Expires in ${duration_seconds}s).`);
   res.json(credential);
+});
+
+app.get('/api/phantompass/credentials', (req, res) => {
+  res.json({
+    credentials: db.phantomCredentials
+  });
 });
 
 // CivicVault Submit Endpoint calling Member 4's helper
@@ -218,8 +271,12 @@ app.post('/api/civicvault/submit', (req, res) => {
 
   const messageId = `vault_msg_${Math.floor(100 + Math.random() * 900)}`;
   
-  // Call Member 4's key splitter utility:
-  const juryShares = cryptoEngine.splitMessageKey(encrypted_payload, required_signatures, total_jury_pool);
+  // Generate a valid 32-byte hexadecimal key by hashing the payload string
+  const crypto = require('crypto');
+  const symmetricKeyHex = crypto.createHash('sha256').update(encrypted_payload).digest('hex');
+
+  // Call Member 4's mathematically correct key splitter utility:
+  const juryShares = cryptoEngine.splitMessageKey(symmetricKeyHex);
 
   db.civicVaultMessages[messageId] = {
     message_id: messageId,
@@ -228,6 +285,7 @@ app.post('/api/civicvault/submit', (req, res) => {
     required_signatures,
     collected_shares: {},
     signatures: [],
+    shares: juryShares, // Saved so the frontend demo dashboard loop can dynamically fetch the real shares
     status: 'LOCKED'
   };
 
@@ -414,10 +472,11 @@ app.post('/api/demo/reset', (req, res) => {
   db.biasSuppressions = [];
   db.predictions = [...defaultPredictions];
   db.civicVaultMessages = {};
-  db.phantomCredentials = [];
+  db.phantomCredentials = [...defaultCredentials];
   const scoreData = calculateTrustScore();
   io.emit('trust-score-update', scoreData);
   io.emit('predictions-reset', defaultPredictions);
+  io.emit('phantompass-reset', defaultCredentials);
   broadcastAlert('system_reset', 'System state reset to base operations.');
   res.json({ message: 'System state reset', current_state: scoreData });
 });

@@ -133,17 +133,18 @@ async function runTests() {
     console.log("⏳ Test 5: Queueing CivicVault Encrypted Report...");
     const submitVault = await post('/api/civicvault/submit', { encrypted_payload: 'encrypted-hazard-payload' });
     const messageId = submitVault.data.message_id;
+    const shares = submitVault.data.jury_shares_created;
     console.log(`   Report Queued with ID: ${messageId}`);
     console.log(`   Consensus status: ${submitVault.data.status}`);
 
     console.log("   - Submitting Juror 1 Signature...");
-    await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_1', secret_share: 'share_01' });
+    await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_1', secret_share: shares[0].secret_share });
 
     console.log("   - Submitting Juror 2 Signature...");
-    await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_2', secret_share: 'share_02' });
+    await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_2', secret_share: shares[1].secret_share });
 
     console.log("   - Submitting Juror 3 Signature (Expect decryption unlock)...");
-    const sign3 = await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_3', secret_share: 'share_03' });
+    const sign3 = await post('/api/civicvault/sign', { message_id: messageId, jury_id: 'citizen_jury_3', secret_share: shares[2].secret_share });
     console.log(`   Consensus status: ${sign3.data.status}`);
     console.log(`   Decrypted emergency data: "${sign3.data.decrypted_content}"`);
 

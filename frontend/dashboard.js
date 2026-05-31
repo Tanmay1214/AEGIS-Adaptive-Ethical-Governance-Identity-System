@@ -261,8 +261,20 @@ function initDashboard() {
         renderPredictions(defaultPreds);
     });
 
-    // Fetch initial FairWatch predictions
+    socket.on('new-phantompass-credential', (credential) => {
+        console.log("[SOCKET_DATA] New ZK proof resident credential received: ", credential);
+        loadPhantomPassData();
+    });
+
+    socket.on('phantompass-reset', (defaultCreds) => {
+        console.log("[SOCKET_DATA] PhantomPass credentials reset received.");
+        currentCredentials = defaultCreds;
+        renderPhantomPass();
+    });
+
+    // Fetch initial predictions & ZK credentials
     loadFairWatchData();
+    loadPhantomPassData();
 
     // ── 4. Geographic Map Visualizer (Leaflet.js) ────────────────
     let mapEl = document.getElementById('map');
@@ -436,6 +448,10 @@ window.startCitizenDecryptionSimulation = async () => {
         }
 
         const messageId = message.message_id;
+        const shares = message.shares || [];
+        const share1 = shares[0] ? shares[0].secret_share : 'share_01';
+        const share2 = shares[1] ? shares[1].secret_share : 'share_02';
+        const share3 = shares[2] ? shares[2].secret_share : 'share_03';
 
         // Reset progress bar & juror tags to simulate signing
         if (progressBar) progressBar.style.width = "40%";
@@ -458,12 +474,12 @@ window.startCitizenDecryptionSimulation = async () => {
         await fetch(`${DASH_API_URL}/civicvault/sign`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_1', secret_share: 'share_01' })
+            body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_1', secret_share: share1 })
         });
         await fetch(`${DASH_API_URL}/civicvault/sign`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_2', secret_share: 'share_02' })
+            body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_2', secret_share: share2 })
         });
 
         // Simulate Citizen 3 signing after 1.5s
@@ -473,7 +489,7 @@ window.startCitizenDecryptionSimulation = async () => {
                 const signRes = await fetch(`${DASH_API_URL}/civicvault/sign`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_3', secret_share: 'share_03' })
+                    body: JSON.stringify({ message_id: messageId, jury_id: 'citizen_jury_3', secret_share: share3 })
                 });
                 const signData = await signRes.json();
 
@@ -816,3 +832,92 @@ function updateSuppressedLogs(predictions) {
 
     logsEl.scrollTop = logsEl.scrollHeight;
 }
+
+// ── 6. PhantomPass AI Dynamic Real-time Integration ────────────────
+let currentCredentials = [];
+
+async function loadPhantomPassData() {
+    const tbody = document.getElementById('phantompass-tbody');
+    if (!tbody) return;
+
+    try {
+        const response = await fetch(`${DASH_API_URL}/phantompass/credentials`);
+        const data = await response.json();
+        
+        if (data && data.credentials) {
+            currentCredentials = data.credentials;
+            renderPhantomPass();
+        }
+    } catch (err) {
+        console.error("Failed to load PhantomPass credentials:", err);
+    }
+}
+
+function renderPhantomPass() {
+    const tbody = document.getElementById('phantompass-tbody');
+    const hashesEl = document.getElementById('zero-knowledge-hashes');
+    if (!tbody || !hashesEl) return;
+
+    tbody.innerHTML = '';
+    hashesEl.innerHTML = '';
+
+    // Sort: newest expires_at first
+    const sorted = [...currentCredentials].sort((a, b) => new Date(b.expires_at) - new Date(a.expires_at));
+
+    sorted.forEach(cred => {
+        const expiry = new Date(cred.expires_at).getTime();
+        const diff = expiry - Date.now();
+        
+        let timeStr = "00:00 mins";
+        let isExpired = diff <= 0;
+        
+        if (!isExpired && cred.active) {
+            const mins = Math.floor(diff / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} mins`;
+        }
+
+        const isRevoked = isExpired || !cred.active;
+        const status = isRevoked ? "REVOKED" : "CONSENTED";
+        
+        const row = document.createElement('tr');
+        row.className = "hover:bg-[#00FBFB]/5 transition-colors border-b border-[#00FBFB]/10";
+        
+        const tokenDisplayId = cred.proof_credential.substring(cred.proof_credential.length - 4).toUpperCase();
+        
+        const statusBadge = isRevoked 
+            ? `<span class="px-2 py-0.5 border border-red-500 text-red-500 text-[9px] font-bold animate-pulse">REVOKED</span>`
+            : `<span class="px-2 py-0.5 border border-green-400 text-green-400 text-[9px] font-bold">CONSENTED</span>`;
+
+        const idClass = isRevoked ? "text-red-500 animate-pulse font-bold" : "text-[#00FBFB] font-bold";
+
+        row.innerHTML = `
+            <td class="p-3 ${idClass}">#TKN-${tokenDisplayId}</td>
+            <td class="p-3 truncate max-w-[120px]" title="${cred.citizen_id_hash}">${cred.citizen_id_hash.substring(0, 8)}...</td>
+            <td class="p-3 font-mono">${timeStr}</td>
+            <td class="p-3 text-right">
+                ${statusBadge}
+            </td>
+        `;
+        tbody.appendChild(row);
+
+        const logLine = document.createElement('div');
+        if (isRevoked) {
+            logLine.className = "text-red-500 font-bold animate-pulse";
+            logLine.innerText = `[INVALIDATED] ZK-Proof token #TKN-${tokenDisplayId} verification expired. De-authorizing camera pipeline...`;
+        } else {
+            logLine.className = "text-green-400 font-bold";
+            logLine.innerText = `[VERIFIED] ZK-Proof Ward residency verified for token #TKN-${tokenDisplayId}. (Address & name suppressed).`;
+        }
+        hashesEl.appendChild(logLine);
+    });
+
+    hashesEl.scrollTop = hashesEl.scrollHeight;
+}
+
+// Start second-by-second countdown ticker locally for real-time high-fidelity visuals
+setInterval(() => {
+    if (currentCredentials && currentCredentials.length > 0) {
+        renderPhantomPass();
+    }
+}, 1000);
