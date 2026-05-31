@@ -56,7 +56,7 @@ ConsentCam provides edge-computed visual shielding and surveillance controls.
 * **Privacy Trust Score Dial**: Calculates a composite trust rating based on active consents, SSS vault decrypts, and bias suppressions.
 * **Automatic Throttling**: If the composite score collapses below 50 (e.g. during a demographic profiling spike), the dashboard automatically triggers a critical blackout, applying heavy visual blurs across all active camera feeds.
 
-![ConsentCam Dynamic Blurring and Trust Score Dial](screenshots/consentcam_demo.png)
+![ConsentCam Dynamic Blurring and Trust Score Dial](screenshots/consentcam.png)
 
 ---
 
