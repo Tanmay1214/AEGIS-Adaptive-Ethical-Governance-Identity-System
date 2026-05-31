@@ -15,7 +15,7 @@ AEGIS is designed as a decoupled, monorepo multi-service application composed of
 3. **Vision GPU Service (Port 8001)**: A GPU-accelerated OpenCV and InsightFace WebSocket server that executes edge-level face recognition, streams real-time coordinate coordinates, and handles visual consent token verification.
 4. **Static UI Frontend**: A vanilla HTML, CSS, and JavaScript interface served by the backend, utilizing Tailwind CSS for structural styling and Socket.io for live updates.
 
-![AEGIS System Architecture Overview](screenshots/architecture_overview.png)
+![AEGIS System Architecture Overview](screenshots/architecture_overview.jpg)
 
 ---
 
@@ -55,6 +55,8 @@ ConsentCam provides edge-computed visual shielding and surveillance controls.
 * **Privacy-by-Default Blurring**: Face coordinates in all video streams are blurred by default to maintain visual anonymity in public spaces.
 * **Privacy Trust Score Dial**: Calculates a composite trust rating based on active consents, SSS vault decrypts, and bias suppressions.
 * **Automatic Throttling**: If the composite score collapses below 50 (e.g. during a demographic profiling spike), the dashboard automatically triggers a critical blackout, applying heavy visual blurs across all active camera feeds.
+
+![ConsentCam Dynamic Blurring and Trust Score Dial](screenshots/consentcam_demo.png)
 
 ---
 
@@ -176,3 +178,11 @@ Follow this sequence to manually demonstrate the integration of the four main sy
    - Change parameters to a protected class (*Low Income* or *Minority*) and click **"Run Forecast Audit"**. The dashboard instantly suppresses the alert, displaying a pulsing red **SUPPRESSED** badge, scaling the SHAP bar to critical limits, and logging the suppression audit.
 
 ![FairWatch AI Passed and Suppressed Forecasts](screenshots/fairwatch_demo.png)
+
+### Part 4: ConsentCam Edge Visual Shielding Demo
+1. In the Citizen Portal, scroll to card **"1. Dynamic Geolocation Consent"**.
+2. Toggle the consent switch off. Note the walkout buffer delay initiates a 3.0-second countdown.
+3. Observe on the Operator Dashboard that the client's visual feed is instantly obscured by a heavy Gaussian blur at the hardware edge.
+4. Toggle the consent switch back on to instantly verify signature permissions and restore the unblurred clearance state.
+
+![ConsentCam Dynamic Blurring and Trust Score Dial](screenshots/consentcam_demo.png)
