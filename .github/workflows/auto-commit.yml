@@ -1,24 +1,63 @@
-name: Daily Contribution
+name: Natural Contribution Pattern
 
 on:
   schedule:
-    - cron: '0 12 * * *'  # Runs daily at 12:00 UTC
-  workflow_dispatch:  # Allows manual trigger
+    - cron: '0 14 * * *'  # Daily at 2 PM UTC
+  workflow_dispatch:
 
 jobs:
-  update-readme:
+  contribute:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Update README with timestamp
+      - name: Generate natural activity
         run: |
-          echo "<!-- Last updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC') -->" >> README.md
+          DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
+          ROLL=$((RANDOM % 100))
           
-      - name: Commit and push
-        run: |
+          # 25% chance to skip entirely (rest day)
+          if [ $ROLL -lt 25 ]; then
+            echo "Taking a day off - no commits today"
+            exit 0
+          fi
+          
+          # Determine activity level based on "mood" and day of week
+          # Weekends tend to be lighter
+          if [ $DAY_OF_WEEK -ge 6 ]; then
+            # Weekend - lighter activity
+            MOOD=$((RANDOM % 3))
+            case $MOOD in
+              0) COMMIT_COUNT=1 ;;  # Lazy weekend
+              1) COMMIT_COUNT=2 ;;  # Light work
+              2) COMMIT_COUNT=$((RANDOM % 3 + 3)) ;;  # Productive weekend
+            esac
+          else
+            # Weekday - more variable
+            MOOD=$((RANDOM % 10))
+            case $MOOD in
+              0|1) COMMIT_COUNT=1 ;;      # Light day (20%)
+              2|3|4) COMMIT_COUNT=$((RANDOM % 3 + 2)) ;;  # Normal day 2-4 (30%)
+              5|6|7) COMMIT_COUNT=$((RANDOM % 4 + 4)) ;;  # Busy day 4-7 (30%)
+              8|9) COMMIT_COUNT=$((RANDOM % 6 + 6)) ;;   # Crunch day 6-11 (20%)
+            esac
+          fi
+          
+          echo "Today is a $([ $DAY_OF_WEEK -ge 6 ] && echo 'weekend' || echo 'weekday') - making $COMMIT_COUNT commits"
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -m "chore: auto-update timestamp $(date -u '+%Y-%m-%d')" || exit 0
+          
+          for i in $(seq 1 $COMMIT_COUNT); do
+            # Vary the commit messages too for realism
+            MESSAGES=("fix: minor update" "chore: maintenance" "docs: add note" "refactor: cleanup" "update: daily sync" "style: formatting")
+            MSG_INDEX=$((RANDOM % ${#MESSAGES[@]}))
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S.%N UTC')
+            
+            git commit --allow-empty -m "${MESSAGES[$MSG_INDEX]} - $TIMESTAMP"
+          done
+          
           git push
+          echo "Pushed $COMMIT_COUNT commits"
